@@ -3,5 +3,5 @@ Proyecto de la Cátedra Atmira UCO 2025/2026
 
 
 ## Autores:
-Ángel Eduardo Bauste De Nicolais
+Ángel Eduardo Bauste De Nicolais //
 Álvaro Ruiz Rivas
