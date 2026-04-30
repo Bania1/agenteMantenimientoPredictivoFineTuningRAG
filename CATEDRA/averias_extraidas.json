@@ -1,0 +1,83 @@
+[
+  {
+    "aparato": "Microondas",
+    "sintoma": "Averías de funcionamiento\nAvería Causa y resolución de problemas",
+    "codigo_error": "No especificado",
+    "causa_probable": "No determinada",
+    "pasos_reparacion": "Consultar servicio tecnico.",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El aparato no funciona",
+    "codigo_error": "No especificado",
+    "causa_probable": "El enchufe del cable de conexión de red no está conectado",
+    "pasos_reparacion": "Conectar el aparato a la red eléctrica. El fusible de la caja de fusibles ha saltado. Comprobar el fusible de la caja de fusibles. El suministro de corriente eléctrica se ha interrumpido. Comprobar que la iluminación del compartimento u otros aparatos funciona en la habitación. Avería 1. Desconectar el fusible de la caja de fusibles. Volver a conectar el fusible tras unos 10 s. Si la avería solo se presentó una vez, desaparece el mensaje. Si la indicación vuelve a aparecer, avisar al Servicio de Asistencia Técnica. Al\nllamar, proporcione el mensaje de avería exacto. \"Servicio de Asistencia Técnica\", Página 17\nLa puerta no está bien cerrada. Comprobar si se ha atascado algún resto de comida o algún objeto extraño en la puerta",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "Los alimentos tardan más en ca- lentarse que antes",
+    "codigo_error": "No especificado",
+    "causa_probable": "La potencia de microondas es demasiado baja",
+    "pasos_reparacion": "Seleccionar una potencia de microondas superior. Página 10\nSe ha introducido una cantidad mayor a la habitual en el aparato. Ajustar una duración de tiempo más larga. Para una cantidad doble, es necesario el doble de tiempo. Los alimentos están más fríos de lo que deberían. Remover o dar la vuelta a los alimentos de vez en cuando",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El plato giratorio roza o arrastra",
+    "codigo_error": "No especificado",
+    "causa_probable": "Hay suciedad o objetos extraños en la zona del accionamiento del plato giratorio",
+    "pasos_reparacion": "Limpiar el anillo giratorio y el rebaje del compartimento de cocción",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El funcionamiento del microon- das se interrumpe",
+    "codigo_error": "No especificado",
+    "causa_probable": "El aparato presenta una avería",
+    "pasos_reparacion": "Si persiste el fallo, avisar al Servicio de Asistencia Técnica",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El aparato no está en funciona- miento",
+    "codigo_error": "No especificado",
+    "causa_probable": "En el panel indicador se muestra una duración",
+    "pasos_reparacion": "Se ha accionado por error el área de programación. Después del ajuste, no se ha pulsado. Pulsar  ; alternativamente, pulsar   para cancelar el ajuste",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "En el display aparecen tres ce- ros",
+    "codigo_error": "No especificado",
+    "causa_probable": "El suministro de corriente eléctrica se ha interrumpido",
+    "pasos_reparacion": "Volver a ajustar la hora. \"Realizar la primera puesta en marcha\", Página 9",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "En el display aparece",
+    "codigo_error": "No especificado",
+    "causa_probable": "El modo demo está activado",
+    "pasos_reparacion": "Desactivar el modo Demo. \"Ajustes básicos\", Página 13",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "Aparece el mensaje   en el dis- play",
+    "codigo_error": "No especificado",
+    "causa_probable": "Fallo en el sistema de apertura automática de la puerta",
+    "pasos_reparacion": "Desactivar el aparato. Esperar 10 minutos. Volver a activar el aparato. Si persiste el fallo, avisar al Servicio de Asistencia Técnica",
+    "porcentaje_certeza": 70,
+    "grado_peligrosidad": 5
+  }
+]
