@@ -1,0 +1,124 @@
+{
+  "devices": {
+    "fridge": {
+      "aliases": [
+        "nevera",
+        "fridge",
+        "refrigerator",
+        "frigorifico",
+        "frigorífico",
+        "congelador",
+        "freezer"
+      ],
+      "incompatible_terms": [
+        "magnetron",
+        "magnetrón",
+        "centrifug",
+        "rodamient",
+        "tambor",
+        "drum",
+        "spin cycle",
+        "grill resistance",
+        "magnetron exhausted"
+      ]
+    },
+    "washing_machine": {
+      "aliases": [
+        "lavadora",
+        "washing machine",
+        "washer"
+      ],
+      "incompatible_terms": [
+        "magnetron",
+        "magnetrón",
+        "compresor frigorifico",
+        "evaporador",
+        "freezer",
+        "ice maker"
+      ]
+    },
+    "microwave": {
+      "aliases": [
+        "microondas",
+        "microwave"
+      ],
+      "incompatible_terms": [
+        "centrifug",
+        "tambor",
+        "drum bearing",
+        "compresor",
+        "evaporador",
+        "freezer"
+      ]
+    },
+    "dishwasher": {
+      "aliases": [
+        "lavavajillas",
+        "dishwasher"
+      ],
+      "incompatible_terms": [
+        "magnetron",
+        "magnetrón",
+        "centrifug",
+        "tambor",
+        "freezer",
+        "burner"
+      ]
+    },
+    "oven": {
+      "aliases": [
+        "horno",
+        "oven"
+      ],
+      "incompatible_terms": [
+        "magnetron",
+        "magnetrón",
+        "centrifug",
+        "drum bearing",
+        "compresor frigorifico",
+        "ice maker"
+      ]
+    },
+    "dryer": {
+      "aliases": [
+        "secadora",
+        "dryer"
+      ],
+      "incompatible_terms": [
+        "magnetron",
+        "magnetrón",
+        "compresor",
+        "evaporador",
+        "freezer",
+        "ice maker"
+      ]
+    },
+    "cooktop": {
+      "aliases": [
+        "vitro",
+        "induccion",
+        "inducción",
+        "campana",
+        "cooktop",
+        "induction",
+        "range hood"
+      ],
+      "incompatible_terms": [
+        "magnetron",
+        "magnetrón",
+        "centrifug",
+        "tambor",
+        "freezer",
+        "ice maker"
+      ]
+    },
+    "general_appliance": {
+      "aliases": [
+        "electrodomestico",
+        "electrodoméstico",
+        "appliance"
+      ],
+      "incompatible_terms": []
+    }
+  }
+}
