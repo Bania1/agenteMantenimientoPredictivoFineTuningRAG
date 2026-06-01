@@ -1,21 +1,38 @@
 from __future__ import annotations
 
+import hashlib
 import html
 import json
+import math
 import os
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
 import requests
 from flask import Flask, jsonify, request
 
+try:
+    from pymilvus import MilvusClient
+except Exception:
+    MilvusClient = None
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DOMAIN_CATALOG_PATH = REPO_ROOT / "config" / "domain" / "domain_catalog.json"
+MILVUS_DB_PATH = Path(
+    os.getenv(
+        "MILVUS_DB",
+        str(REPO_ROOT / "data" / "milvus-lite" / "reparaciones-lite" / "milvus.db"),
+    )
+)
+MILVUS_COLLECTION = os.getenv("MILVUS_COLLECTION", "reparaciones")
+RAG_TOP_K = int(os.getenv("RAG_TOP_K", "4"))
 OLLAMA_GENERATE_URL = os.getenv("OLLAMA_GENERATE_URL", "http://127.0.0.1:11434/api/generate")
 EXTRACTOR_MODEL = os.getenv("EXTRACTOR_MODEL", "qwen-fusionado")
 RESPONSE_MODEL = os.getenv("RESPONSE_MODEL", "llama3.2:1b")
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "600"))
 DEFAULT_MODE = os.getenv("DEFAULT_MODE", "assistant")
-DOMAIN_CATALOG_PATH = Path(__file__).with_name("domain_catalog.json")
 
 app = Flask(__name__)
 
@@ -30,19 +47,19 @@ REQUIRED_KEYS = {
 }
 
 SYSTEM_PROMPT = """[GOAL]
-Eres un motor de extracción de datos de alta precisión especializado en soporte técnico de electrodomésticos. Tu tarea es analizar descripciones de fallos o manuales y extraer la información técnica clave con objetividad.
+Eres un motor de extraccion de datos de alta precision especializado en soporte tecnico de electrodomesticos. Tu tarea es analizar descripciones de fallos o manuales y extraer la informacion tecnica clave con objetividad.
 
 [OUTPUT FORMAT]
-Responde ÚNICAMENTE con un objeto JSON válido y plano que contenga exactamente estas 7 claves:
+Responde UNICAMENTE con un objeto JSON valido y plano que contenga exactamente estas 7 claves:
 "aparato", "sintoma", "codigo_error", "causa_probable", "pasos_reparacion", "porcentaje_certeza", "grado_peligrosidad".
 
 [ESCALA DE PELIGROSIDAD]
 Usa esta escala para el campo "grado_peligrosidad":
-- 1: Peligro Crítico (Riesgo de Incendio o Arqueo Eléctrico) — chispas, olor a quemado, sobrecalentamiento extremo.
-- 2: Peligro Alto (Sistemas de Potencia e Inverter) — fallos de magnetrón, inverter, sobrecalentamiento intermitente.
-- 3: Peligro Medio (Componentes Internos de Tensión) — fusibles, diodos, sensores de temperatura/humedad.
-- 4: Peligro Bajo (Interface y Mecánica de Puerta) — panel de control, mecanismos de cierre, resistencias de grill.
-- 5: Peligro Mínimo (Configuración y Accesorios) — bloqueos de seguridad, accesorios externos, errores de software."""
+- 1: Peligro Critico (Riesgo de Incendio o Arqueo Electrico) - chispas, olor a quemado, sobrecalentamiento extremo.
+- 2: Peligro Alto (Sistemas de Potencia e Inverter) - fallos de magnetron, inverter, sobrecalentamiento intermitente.
+- 3: Peligro Medio (Componentes Internos de Tension) - fusibles, diodos, sensores de temperatura/humedad.
+- 4: Peligro Bajo (Interfaz y mecanica de puerta) - panel de control, mecanismos de cierre, resistencias de grill.
+- 5: Peligro Minimo (Configuracion y accesorios) - bloqueos de seguridad, accesorios externos, errores de software."""
 
 BRAND_KEYWORDS = [
     "bosch",
@@ -61,6 +78,12 @@ BRAND_KEYWORDS = [
     "hisense",
     "miele",
 ]
+
+TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9_/-]{2,}")
+
+_milvus_client: MilvusClient | None = None
+_milvus_ok = False
+_milvus_error = "No inicializado"
 
 
 def load_domain_catalog() -> dict[str, Any]:
@@ -117,16 +140,167 @@ def detect_device_category(*texts: str) -> str | None:
     return None
 
 
-def build_prompt(user_message: str) -> str:
+def strip_accents(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch))
+
+
+def norm(value: str) -> str:
+    return strip_accents(value or "").casefold()
+
+
+def clean_field(value: Any) -> str:
+    if value is None:
+        return ""
+    text = str(value)
+    text = text.replace("\r\n", "\n").replace("\r", "\n").replace("\u00ad", "")
+    text = re.sub(r"\n+", " ", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    return text.strip()
+
+
+def hash_embedding(text: str, dim: int = 384) -> list[float]:
+    tokens = TOKEN_PATTERN.findall(norm(text))
+    vector = [0.0] * dim
+    if not tokens:
+        return vector
+    for token in tokens:
+        digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+        number = int.from_bytes(digest, byteorder="little", signed=False)
+        index = number % dim
+        sign = -1.0 if number & 1 else 1.0
+        vector[index] += sign
+    length = math.sqrt(sum(v * v for v in vector))
+    if not length:
+        return vector
+    return [v / length for v in vector]
+
+
+def inicializar_milvus() -> None:
+    global _milvus_client, _milvus_ok, _milvus_error
+    if MilvusClient is None:
+        _milvus_ok = False
+        _milvus_error = "pymilvus no esta instalado en el entorno actual"
+        return
+    try:
+        if not MILVUS_DB_PATH.exists():
+            _milvus_ok = False
+            _milvus_error = f"No existe la base vectorial en {MILVUS_DB_PATH}"
+            return
+        _milvus_client = MilvusClient(uri=str(MILVUS_DB_PATH))
+        _milvus_client.load_collection(MILVUS_COLLECTION)
+        _milvus_ok = True
+        _milvus_error = "ok"
+    except Exception as exc:
+        _milvus_ok = False
+        _milvus_error = str(exc)
+        _milvus_client = None
+
+
+def get_milvus_client() -> MilvusClient | None:
+    if _milvus_client is None and not _milvus_ok:
+        inicializar_milvus()
+    return _milvus_client
+
+
+def hit_encaja_con_categoria(hit_aparato: str, categoria: str | None) -> bool:
+    if not categoria:
+        return True
+    aliases = DEVICE_CATALOG.get(categoria, {}).get("aliases", [])
+    aparato_norm = norm(hit_aparato)
+    return any(norm(alias) in aparato_norm for alias in aliases)
+
+
+def rerank_hits_por_aparato(hits: list[dict[str, Any]], aparato_hint: str | None) -> list[dict[str, Any]]:
+    if not aparato_hint:
+        return hits
+
+    hits_compatibles = [
+        hit for hit in hits if hit_encaja_con_categoria(str(hit.get("aparato", "")), aparato_hint)
+    ]
+    if not hits_compatibles:
+        return []
+
+    return sorted(
+        hits_compatibles,
+        key=lambda hit: norm(str(hit.get("aparato", ""))),
+    )
+
+
+def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k: int = RAG_TOP_K) -> list[dict[str, Any]]:
+    global _milvus_ok, _milvus_error
+    client = get_milvus_client()
+    if not _milvus_ok or client is None:
+        return []
+    try:
+        vector = hash_embedding(consulta)
+        raw_results = client.search(
+            collection_name=MILVUS_COLLECTION,
+            data=[vector],
+            limit=top_k,
+            output_fields=[
+                "aparato",
+                "causa_probable",
+                "codigo_error",
+                "pasos_reparacion",
+                "grado_peligrosidad",
+                "porcentaje_certeza",
+            ],
+        )
+        hits: list[dict[str, Any]] = []
+        for hit in raw_results[0]:
+            entity = hit.get("entity", hit)
+            hits.append(
+                {
+                    "score": round(float(hit.get("distance", 0.0)), 4),
+                    "aparato": entity.get("aparato", ""),
+                    "causa_probable": entity.get("causa_probable", ""),
+                    "codigo_error": entity.get("codigo_error", ""),
+                    "pasos_reparacion": entity.get("pasos_reparacion", ""),
+                    "grado_peligrosidad": entity.get("grado_peligrosidad", -1),
+                    "porcentaje_certeza": entity.get("porcentaje_certeza", -1),
+                }
+            )
+        return rerank_hits_por_aparato(hits, aparato_hint)
+    except Exception as exc:
+        _milvus_ok = False
+        _milvus_error = str(exc)
+        return []
+
+
+def construir_contexto_rag(hits: list[dict[str, Any]]) -> str:
+    if not hits:
+        return ""
+    bloques = []
+    for index, hit in enumerate(hits, 1):
+        bloques.append(
+            f"[CASO RECUPERADO {index}]\n"
+            f"Aparato: {hit.get('aparato', 'No especificado')}\n"
+            f"Causa probable: {hit.get('causa_probable', 'No especificado')}\n"
+            f"Codigo de error: {hit.get('codigo_error', 'No especificado')}\n"
+            f"Pasos de reparacion: {hit.get('pasos_reparacion', 'No especificado')}\n"
+            f"Grado de peligrosidad: {hit.get('grado_peligrosidad', 'No especificado')}\n"
+            f"Porcentaje de certeza: {hit.get('porcentaje_certeza', 'No especificado')}\n"
+            f"Similitud: {hit.get('score', 0.0)}"
+        )
+    return "\n\n".join(bloques)
+
+
+def build_prompt(user_message: str, contexto_rag: str = "") -> str:
+    contexto_bloque = ""
+    if contexto_rag:
+        contexto_bloque = (
+            "\n\n[CONTEXTO RECUPERADO DE LA BASE DE AVERIAS]\n"
+            f"{contexto_rag}"
+        )
     input_text = f"[INPUT TEXT]\n{user_message.strip()}\n\n[OUTPUT]\n"
-    return f"{SYSTEM_PROMPT}\n\n{input_text}"
+    return f"{SYSTEM_PROMPT}{contexto_bloque}\n\n{input_text}"
 
 
 def extract_first_json(text: str) -> str | None:
     start = text.find("{")
     if start < 0:
         return None
-
     depth = 0
     for index in range(start, len(text)):
         char = text[index]
@@ -150,11 +324,9 @@ def canonicalize_keys(data: dict[str, Any]) -> dict[str, Any]:
 def normalize_percentage(value: Any) -> int | str:
     if value is None:
         return "No especificado"
-
     text = str(value).strip()
     if not text:
         return "No especificado"
-
     match = re.search(r"\d+", text)
     if not match:
         return "No especificado"
@@ -164,11 +336,9 @@ def normalize_percentage(value: Any) -> int | str:
 def normalize_severity(value: Any) -> int | str:
     if value is None:
         return "No especificado"
-
     text = str(value).strip()
     if not text:
         return "No especificado"
-
     match = re.search(r"[1-5]", text)
     if not match:
         return "No especificado"
@@ -199,7 +369,6 @@ def validate_extraction_json(json_text: str | None) -> dict[str, Any] | None:
         return None
     if not {"aparato", "sintoma", "causa_probable", "pasos_reparacion"}.issubset(data.keys()):
         return None
-
     filled = fill_missing_fields(data)
     if set(filled.keys()) != REQUIRED_KEYS:
         return None
@@ -219,7 +388,6 @@ def assess_extraction_consistency(user_message: str, extracted: dict[str, Any]) 
     device_category = detect_device_category(user_message, str(extracted.get("aparato", "")))
     if not device_category:
         return []
-
     device_data = DEVICE_CATALOG.get(device_category, {})
     text_to_check = " ".join(
         [
@@ -229,12 +397,11 @@ def assess_extraction_consistency(user_message: str, extracted: dict[str, Any]) 
             json.dumps(extracted.get("pasos_reparacion", ""), ensure_ascii=False),
         ]
     ).lower()
-
     issues: list[str] = []
     for term in device_data.get("incompatible_terms", []):
         if term.lower() in text_to_check:
             issues.append(
-                f"Incompatibilidad aparente: el término '{term}' no encaja bien con el aparato '{device_category}'."
+                f"Incompatibilidad aparente: el termino '{term}' no encaja bien con el aparato '{device_category}'."
             )
     return issues
 
@@ -242,12 +409,11 @@ def assess_extraction_consistency(user_message: str, extracted: dict[str, Any]) 
 def build_consistency_notice(issues: list[str]) -> str:
     if not issues:
         return ""
-
     bullet_lines = "".join(f"<li>{html.escape(issue)}</li>" for issue in issues)
     return (
         "<div style='margin-top:12px;padding:12px;border:1px solid #f59e0b;"
         "background:#fffbeb;border-radius:10px;color:#92400e;'>"
-        "<strong>Extracción dudosa:</strong> se detectaron incoherencias en los datos del extractor."
+        "<strong>Extraccion dudosa:</strong> se detectaron incoherencias en los datos del extractor."
         f"<ul style='margin:8px 0 0 18px;'>{bullet_lines}</ul>"
         "</div>"
     )
@@ -257,42 +423,66 @@ def build_severity_warning(user_message: str, extracted: dict[str, Any]) -> str:
     severity = extracted.get("grado_peligrosidad")
     if severity != 1:
         return ""
-
     brand = detect_brand(user_message, extracted)
     if brand:
         return (
             "<div style='margin-top:12px;padding:12px;border:1px solid #fecaca;"
             "background:#fff1f2;border-radius:10px;color:#9f1239;'>"
             "<strong>Aviso de seguridad:</strong> El caso se ha clasificado "
-            "como peligro crítico. No se recomienda seguir manipulando el "
-            f"equipo. Contacta con el soporte técnico oficial de {html.escape(brand)}."
+            "como peligro critico. No se recomienda seguir manipulando el "
+            f"equipo. Contacta con el soporte tecnico oficial de {html.escape(brand)}."
             "</div>"
         )
-
     return (
         "<div style='margin-top:12px;padding:12px;border:1px solid #fecaca;"
         "background:#fff1f2;border-radius:10px;color:#9f1239;'>"
         "<strong>Aviso de seguridad:</strong> El caso se ha clasificado como "
-        "peligro crítico. No se recomienda seguir manipulando el equipo. "
-        "Contacta con el soporte técnico oficial de la marca del electrodoméstico."
+        "peligro critico. No se recomienda seguir manipulando el equipo. "
+        "Contacta con el soporte tecnico oficial de la marca del electrodomestico."
         "</div>"
     )
 
 
-def render_json_response(user_message: str, data: dict[str, Any], issues: list[str]) -> str:
+def build_rag_notice(rag_hits: list[dict[str, Any]]) -> str:
+    if not rag_hits:
+        return ""
+    elementos = "".join(
+        f"<li>{html.escape(str(hit.get('aparato', 'Caso recuperado')))} - similitud {hit.get('score', 0.0)}</li>"
+        for hit in rag_hits[:3]
+    )
+    return (
+        "<div style='margin-top:12px;padding:12px;border:1px solid #86efac;"
+        "background:#f0fdf4;border-radius:10px;color:#166534;'>"
+        "<strong>RAG activo:</strong> se han recuperado averias similares desde Milvus Lite."
+        f"<ul style='margin:8px 0 0 18px;'>{elementos}</ul>"
+        "</div>"
+    )
+
+
+def render_json_response(
+    user_message: str,
+    data: dict[str, Any],
+    issues: list[str],
+    rag_hits: list[dict[str, Any]],
+) -> str:
     pretty = json.dumps(data, ensure_ascii=False, indent=2)
     return (
-        "<strong>Modo validación del extractor</strong><br>"
+        "<strong>Modo validacion del extractor</strong><br>"
         "Respuesta JSON generada por el modelo:<br><br>"
         f"<pre>{html.escape(pretty)}</pre>"
+        f"{build_rag_notice(rag_hits)}"
         f"{build_consistency_notice(issues)}"
         f"{build_severity_warning(user_message, data)}"
     )
 
 
-def build_inconsistent_extraction_response(user_message: str, extracted: dict[str, Any], issues: list[str]) -> str:
+def build_inconsistent_extraction_response(
+    user_message: str,
+    extracted: dict[str, Any],
+    issues: list[str],
+) -> str:
     language = detect_output_language(user_message)
-    appliance = str(extracted.get("aparato", "el electrodoméstico"))
+    appliance = str(extracted.get("aparato", "el electrodomestico"))
     symptom = str(extracted.get("sintoma", "el problema descrito"))
     error_code = str(extracted.get("codigo_error", "No especificado"))
     code_text = ""
@@ -300,8 +490,7 @@ def build_inconsistent_extraction_response(user_message: str, extracted: dict[st
         if language == "English":
             code_text = f" The extracted error code was {error_code}."
         else:
-            code_text = f" El código extraído fue {error_code}."
-
+            code_text = f" El codigo extraido fue {error_code}."
     if language == "English":
         return (
             f"We detected an issue affecting the {appliance}: {symptom}.{code_text} "
@@ -310,13 +499,12 @@ def build_inconsistent_extraction_response(user_message: str, extracted: dict[st
             "assuming the extracted cause is correct and to continue with conservative checks only. "
             "If the problem persists, contact the brand's official technical support."
         )
-
     return (
         f"Hemos detectado un problema en {appliance}: {symptom}.{code_text} "
-        "Sin embargo, algunos detalles del diagnóstico extraído no encajan bien con este tipo de "
-        "electrodoméstico, así que la causa automática puede no ser fiable. Por ahora, lo más prudente "
+        "Sin embargo, algunos detalles del diagnostico extraido no encajan bien con este tipo de "
+        "electrodomestico, asi que la causa automatica puede no ser fiable. Por ahora, lo mas prudente "
         "es no dar por buena esa causa y limitarse a comprobaciones seguras. Si el problema persiste, "
-        "contacta con el soporte técnico oficial de la marca."
+        "contacta con el soporte tecnico oficial de la marca."
     )
 
 
@@ -330,17 +518,14 @@ def normalize_steps(steps: Any) -> list[str]:
 
 def build_structured_assistant_response(user_message: str, extracted: dict[str, Any]) -> str:
     language = detect_output_language(user_message)
-    appliance = str(extracted.get("aparato", "el electrodoméstico"))
+    appliance = str(extracted.get("aparato", "el electrodomestico"))
     symptom = str(extracted.get("sintoma", "el problema descrito"))
     cause = str(extracted.get("causa_probable", "No especificado"))
     certainty = extracted.get("porcentaje_certeza", "No especificado")
     error_code = str(extracted.get("codigo_error", "No especificado"))
     steps = normalize_steps(extracted.get("pasos_reparacion"))
-
     if language == "English":
-        parts = [
-            f"We detected a problem affecting the {appliance}: {symptom}.",
-        ]
+        parts = [f"We detected a problem affecting the {appliance}: {symptom}."]
         if error_code != "No especificado":
             parts.append(f"The extracted error code is {error_code}.")
         if cause != "No especificado":
@@ -353,21 +538,18 @@ def build_structured_assistant_response(user_message: str, extracted: dict[str, 
         else:
             parts.append("No safe repair steps were extracted with enough confidence.")
         return " ".join(parts)
-
-    parts = [
-        f"Hemos detectado un problema en {appliance}: {symptom}.",
-    ]
+    parts = [f"Hemos detectado un problema en {appliance}: {symptom}."]
     if error_code != "No especificado":
-        parts.append(f"El código extraído es {error_code}.")
+        parts.append(f"El codigo extraido es {error_code}.")
     if cause != "No especificado":
-        parts.append(f"La causa probable extraída es: {cause}.")
+        parts.append(f"La causa probable extraida es: {cause}.")
     if certainty != "No especificado":
         parts.append(f"Certeza estimada: {certainty}%.")
     if steps:
         joined_steps = " ".join(f"{index + 1}. {step}." for index, step in enumerate(steps[:3]))
         parts.append(f"Pasos sugeridos: {joined_steps}")
     else:
-        parts.append("No se han extraído pasos de reparación seguros con suficiente confianza.")
+        parts.append("No se han extraido pasos de reparacion seguros con suficiente confianza.")
     return " ".join(parts)
 
 
@@ -392,18 +574,28 @@ def call_ollama_generate(model: str, prompt: str, num_predict: int = 350) -> str
     return str(data.get("response", ""))
 
 
-def build_assistant_prompt(user_message: str, extracted: dict[str, Any], issues: list[str]) -> str:
+def build_assistant_prompt(
+    user_message: str,
+    extracted: dict[str, Any],
+    issues: list[str],
+    contexto_rag: str = "",
+) -> str:
     extracted_json = json.dumps(extracted, ensure_ascii=False, indent=2)
     target_language = detect_output_language(user_message)
-    issues_block = "\n".join(f"- {issue}" for issue in issues) or "- No issues detected."
-    return f"""You are a multilingual appliance support assistant.
-Answer only in {target_language}. Do not switch languages. Support at least Spanish and English.
-Be concise, practical, and safety-aware. Your job is to turn a structured appliance diagnosis into a natural user-facing answer.
-Do not invent facts not grounded in the extracted data.
-If the extraction contains suspicious or inconsistent details, do not present them as confirmed facts. Say that some extracted details may be unreliable and focus on safe, conservative guidance.
-
-If the extracted severity is 1, explicitly warn the user to stop manipulating the appliance and contact the official technical support of the brand if known.
-
+    issues_block = "\n".join(f"- {issue}" for issue in issues) or "- No se han detectado incoherencias."
+    rag_block = ""
+    if contexto_rag:
+        rag_block = f"\n[CONTEXTO RAG]\n{contexto_rag}\n"
+    return f"""Eres un asistente tecnico multilingue especializado en electrodomesticos.
+Responde solo en {target_language}. No cambies de idioma.
+Se breve, practico y cuidadoso con la seguridad.
+Convierte el diagnostico extraido en una respuesta natural pensada para el usuario final.
+No inventes hechos que no esten respaldados por los datos extraidos ni por el contexto RAG.
+Si la extraccion contiene detalles sospechosos o incoherentes, no los presentes como hechos confirmados.
+Si la peligrosidad extraida es 1, advierte de forma explicita que el usuario debe dejar de manipular el aparato y contactar con el soporte tecnico oficial si hace falta.
+No menciones etiquetas internas, nombres de bloques, numeraciones de casos recuperados ni detalles de implementacion.
+No digas cosas como "caso recuperado", "contexto RAG", "transcripcion" o frases parecidas.
+{rag_block}
 [USER_MESSAGE]
 {user_message}
 
@@ -414,10 +606,9 @@ If the extracted severity is 1, explicitly warn the user to stop manipulating th
 {issues_block}
 
 [TASK]
-Write a clear support reply for the end user in plain text.
-If key fields are missing or unreliable, say so plainly instead of inventing details.
-If there are consistency issues, explain that the diagnostic extraction may be inconsistent for this appliance and avoid repeating the suspicious component as if it were certainly correct.
-Do not output JSON."""
+Escribe una respuesta clara para el usuario final en texto plano.
+Si faltan campos importantes o no son fiables, dilo de forma clara en vez de inventar detalles.
+No devuelvas JSON."""
 
 
 @app.post("/api/chat")
@@ -436,15 +627,23 @@ def chat() -> tuple[Any, int] | Any:
             {
                 "response": (
                     "<strong>Fuera de dominio.</strong><br>"
-                    "Este prototipo solo está preparado ahora mismo para "
-                    "consultas sobre averías y soporte técnico de electrodomésticos."
+                    "Este prototipo solo esta preparado ahora mismo para "
+                    "consultas sobre averias y soporte tecnico de electrodomesticos."
                 ),
                 "mode": mode,
             }
         )
 
+    aparato_hint = detect_device_category(message)
+    rag_hits = buscar_fragmentos_rag(message, aparato_hint=aparato_hint, top_k=RAG_TOP_K)
+    contexto_rag = construir_contexto_rag(rag_hits)
+
     try:
-        raw_response = call_ollama_generate(EXTRACTOR_MODEL, build_prompt(message), num_predict=350)
+        raw_response = call_ollama_generate(
+            EXTRACTOR_MODEL,
+            build_prompt(message, contexto_rag),
+            num_predict=350,
+        )
     except requests.RequestException as exc:
         return jsonify({"error": f"Error al consultar Ollama: {exc}"}), 502
 
@@ -453,16 +652,24 @@ def chat() -> tuple[Any, int] | Any:
 
     if extracted is None:
         fallback = (
-            "<strong>El extractor no devolvió un JSON válido.</strong><br>"
-            "Salida bruta del modelo para diagnóstico:<br><br>"
+            "<strong>El extractor no devolvio un JSON valido.</strong><br>"
+            "Salida bruta del modelo para diagnostico:<br><br>"
             f"<pre>{html.escape(raw_response)}</pre>"
+            f"{build_rag_notice(rag_hits)}"
         )
-        return jsonify({"response": fallback, "mode": mode})
+        return jsonify({"response": fallback, "mode": mode, "rag_used": bool(rag_hits)})
 
     issues = assess_extraction_consistency(message, extracted)
 
     if mode == "extractor":
-        return jsonify({"response": render_json_response(message, extracted, issues), "mode": mode})
+        return jsonify(
+            {
+                "response": render_json_response(message, extracted, issues, rag_hits),
+                "mode": mode,
+                "rag_used": bool(rag_hits),
+                "rag_hits": rag_hits,
+            }
+        )
 
     if issues:
         assistant_text = build_inconsistent_extraction_response(message, extracted, issues)
@@ -472,14 +679,15 @@ def chat() -> tuple[Any, int] | Any:
         try:
             assistant_text = call_ollama_generate(
                 RESPONSE_MODEL,
-                build_assistant_prompt(message, extracted, issues),
+                build_assistant_prompt(message, extracted, issues, contexto_rag),
                 num_predict=260,
             )
-        except requests.RequestException as exc:
+        except requests.RequestException:
             assistant_text = build_structured_assistant_response(message, extracted)
 
     response_html = (
         f"<div>{html.escape(assistant_text).replace(chr(10), '<br>')}</div>"
+        f"{build_rag_notice(rag_hits)}"
         f"{build_consistency_notice(issues)}"
         f"{build_severity_warning(message, extracted)}"
     )
@@ -488,6 +696,8 @@ def chat() -> tuple[Any, int] | Any:
             "response": response_html,
             "mode": mode,
             "extractor_json": extracted,
+            "rag_used": bool(rag_hits),
+            "rag_hits": rag_hits,
         }
     )
 
@@ -500,9 +710,16 @@ def health() -> Any:
             "extractor_model": EXTRACTOR_MODEL,
             "response_model": RESPONSE_MODEL,
             "default_mode": DEFAULT_MODE,
+            "milvus_ok": _milvus_ok,
+            "milvus_error": _milvus_error,
+            "milvus_db": str(MILVUS_DB_PATH),
+            "collection": MILVUS_COLLECTION,
+            "rag_top_k": RAG_TOP_K,
         }
     )
 
+
+inicializar_milvus()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
