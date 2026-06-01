@@ -1,0 +1,42 @@
+[
+    {
+        "aparato": "Microondas Beko MOC 20100",
+        "codigo_error": "No especificado",
+        "causa_probable": "Incumplimiento sistemático de los intervalos de mantenimiento preventivo y normas operativas básicas del equipo.",
+        "pasos_reparacion": "Efectuar una revisión general del equipo, limpiar sensores si los tuviera, restablecer parámetros a los valores de fábrica e instruir al usuario en las pautas correctas.",
+        "porcentaje_certeza": 60,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Microondas Beko MOC 20100",
+        "codigo_error": "No especificado",
+        "causa_probable": "Golpes o vibraciones excesivas durante el traslado por no proteger el dispositivo en su embalaje original o por mala manipulación.",
+        "pasos_reparacion": "Inspeccionar visualmente la carcasa exterior. Verificar conexiones eléctricas internas que puedan haberse soltado y asegurar la alineación de componentes móviles.",
+        "porcentaje_certeza": 60,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Microondas Beko MOC 20100",
+        "codigo_error": "No especificado",
+        "causa_probable": "Acumulación crítica de suciedad, grasa incrustada o residuos alimenticios en las paredes internas o filtros del sistema.",
+        "pasos_reparacion": "Desconectar el aparato de la red eléctrica. Limpiar en profundidad todas las cavidades y filtros utilizando productos no abrasivos de acuerdo al manual técnico.",
+        "porcentaje_certeza": 60,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Microondas Beko MOC 20100",
+        "codigo_error": "No especificado",
+        "causa_probable": "Filtración directa de líquidos en las placas electrónicas o exposición severa a entornos con alta condensación/humedad.",
+        "pasos_reparacion": "Desconectar de inmediato. Desmontar cubiertas con precaución para permitir un secado completo. Realizar pruebas de aislamiento con un multímetro antes de restablecer la energía.",
+        "porcentaje_certeza": 60,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Microondas Beko MOC 20100",
+        "codigo_error": "No especificado",
+        "causa_probable": "Golpes o vibraciones excesivas durante el traslado por no proteger el dispositivo en su embalaje original o por mala manipulación.",
+        "pasos_reparacion": "Inspeccionar visualmente la carcasa exterior. Verificar conexiones eléctricas internas que puedan haberse soltado y asegurar la alineación de componentes móviles.",
+        "porcentaje_certeza": 60,
+        "grado_peligrosidad": 4
+    }
+]

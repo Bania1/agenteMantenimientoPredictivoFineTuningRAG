@@ -1,0 +1,363 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agente DIY - Cátedra Atmira UCO</title>
+    <!-- Tailwind CSS para un diseño moderno y minimalista -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons para iconografía moderna -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        // Configuración de la paleta de colores corporativa de Atmira
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        atmira: {
+                            navy: '#1b1464',   // Azul corporativo oscuro
+                            pink: '#e6007e',   // Magenta/Rosa vibrante
+                            light: '#f8fafc',
+                            gray: '#f1f5f9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Personalización del scrollbar para un look más limpio */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #e6007e;
+        }
+        .typing-indicator span {
+            animation: blink 1.4s infinite both;
+            height: 6px;
+            width: 6px;
+            background: #e6007e;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink {
+            0% { opacity: 0.2; transform: scale(0.8); }
+            20% { opacity: 1; transform: scale(1.2); }
+            100% { opacity: 0.2; transform: scale(0.8); }
+        }
+    </style>
+</head>
+<body class="bg-atmira-light h-screen flex overflow-hidden font-sans text-slate-800">
+
+    <!-- Sidebar / Panel de Información -->
+    <aside class="w-80 bg-atmira-navy text-white flex flex-col shadow-2xl z-10 hidden md:flex transition-all duration-300">
+        <div class="p-6 border-b border-white/10">
+            <div class="flex items-center gap-3 mb-2">
+                <i data-lucide="cpu" class="text-atmira-pink w-8 h-8"></i>
+                <h1 class="text-xl font-bold tracking-tight">Cátedra atmira</h1>
+            </div>
+            <p class="text-xs text-slate-300 uppercase tracking-widest font-semibold">Open AI & Big Data</p>
+        </div>
+        
+        <div class="p-6 flex-1 overflow-y-auto">
+            <h2 class="text-lg font-semibold text-atmira-pink mb-4">Agente de Mantenimiento Predictivo & Soporte DIY</h2>
+            <p class="text-sm text-slate-300 mb-6 leading-relaxed">
+                Asistente inteligente basado en la familia Qwen 2.5, optimizado mediante Fine-Tuning para resolver problemas en el hogar combatiendo la "caja negra" del mantenimiento.
+            </p>
+
+            <div class="space-y-4">
+                <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <h3 class="text-xs text-atmira-pink uppercase font-bold mb-2 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4"></i> Especificaciones
+                    </h3>
+                    <ul class="text-sm text-slate-300 space-y-2">
+                        <li><strong>Modelo:</strong> Qwen 2.5-0.5B Instruct</li>
+                        <li><strong>Infra:</strong> Databricks CE (Modo CPU)</li>
+                        <li><strong>Paradigma:</strong> Green AI / SLM</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <h3 class="text-xs text-atmira-pink uppercase font-bold mb-2 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4"></i> Equipo de Proyecto
+                    </h3>
+                    <ul class="text-sm text-slate-300 space-y-2">
+                        <li><strong>Autores:</strong></li>
+                        <li class="pl-2 border-l-2 border-atmira-pink">Álvaro Ruiz Rivas</li>
+                        <li class="pl-2 border-l-2 border-atmira-pink">Ángel Eduardo Bauste</li>
+                        <li class="mt-2"><strong>Tutor:</strong> Ángel Luis Perea</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-white/10 text-center text-xs text-slate-400">
+            Arquitectura AtmiraUCO 2026
+        </div>
+    </aside>
+
+    <!-- Área Principal de Chat -->
+    <main class="flex-1 flex flex-col relative">
+        <!-- Header Móvil -->
+        <header class="md:hidden bg-atmira-navy text-white p-4 flex items-center justify-between shadow-md z-20">
+            <div class="flex items-center gap-2">
+                <i data-lucide="cpu" class="text-atmira-pink w-6 h-6"></i>
+                <h1 class="font-bold">Agente DIY</h1>
+            </div>
+            <button id="infoBtn" class="p-2 bg-white/10 rounded-lg">
+                <i data-lucide="info" class="w-5 h-5"></i>
+            </button>
+        </header>
+
+        <!-- Contenedor de Mensajes -->
+        <div id="chatContainer" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNlMmU4ZjAiLz48L3N2Zz4=')]">
+            
+            <!-- Mensaje Inicial del Agente -->
+            <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full bg-atmira-pink flex items-center justify-center shadow-lg shadow-atmira-pink/30 flex-shrink-0">
+                    <i data-lucide="bot" class="text-white w-6 h-6"></i>
+                </div>
+                <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 max-w-[85%] sm:max-w-[75%]">
+                    <h4 class="text-xs font-bold text-atmira-pink mb-1">AGENTE DIY (QWEN 2.5)</h4>
+                    <p class="text-slate-700 leading-relaxed">¡Hola! Soy tu Agente de Mantenimiento Predictivo. He sido entrenado en manuales técnicos para ayudarte a reparar electrodomésticos y combatir la obsolescencia programada.</p>
+                    <p class="text-slate-700 leading-relaxed mt-2">¿En qué puedo ayudarte hoy?</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Área de Input -->
+        <div class="p-4 sm:p-6 bg-white border-t border-slate-200 z-10">
+            
+
+            <div class="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <div class="flex flex-wrap items-center gap-4">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</span>
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <input type="radio" name="responseMode" value="assistant" checked>
+                        <span>Modelo conversacional</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <input type="radio" name="responseMode" value="extractor">
+                        <span>Modelo extractor</span>
+                    </label>
+                </div>
+                <p class="text-[11px] text-slate-500 mt-2">Por defecto se usa la respuesta conversacional. Cambia a extractor para inspeccionar el JSON estructurado.</p>
+            </div>
+
+            <!-- Sugerencias -->
+            <div class="flex flex-wrap gap-2 mb-4">
+                <button onclick="fillInput('Mi lavadora hace un ruido metálico muy fuerte al centrifugar. ¿Qué puede ser?')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
+                    🔊 Lavadora hace ruido
+                </button>
+                <button onclick="fillInput('La nevera no enfría la parte de abajo')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
+                    ❄️ Nevera no enfría
+                </button>
+                <button onclick="fillInput('Me sale el Error E04 en el lavavajillas')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
+                    ⚠️ Error E04 Lavavajillas
+                </button>
+            </div>
+
+            <form id="chatForm" class="flex gap-2 relative">
+                <input type="text" id="userInput" autocomplete="off" placeholder="Escribe tu problema aquí..." 
+                    class="flex-1 bg-atmira-gray border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-atmira-pink focus:border-transparent transition-all">
+                <button type="submit" id="sendBtn" class="bg-atmira-navy hover:bg-atmira-pink text-white px-5 py-3 rounded-xl transition-colors flex items-center justify-center shadow-md disabled:opacity-50">
+                    <i data-lucide="send" class="w-5 h-5"></i>
+                </button>
+            </form>
+            <div class="text-center mt-2">
+                <span class="text-[10px] text-slate-400">El modelo puede cometer errores. Verifica la información con los manuales oficiales si es necesario.</span>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Inicializar iconos
+        lucide.createIcons();
+
+        const chatForm = document.getElementById('chatForm');
+        const userInput = document.getElementById('userInput');
+        const chatContainer = document.getElementById('chatContainer');
+        const sendBtn = document.getElementById('sendBtn');
+        let lastRequest = null;
+
+        // Función auxiliar para rellenar el input desde los botones de sugerencia
+        function fillInput(text) {
+            userInput.value = text;
+            userInput.focus();
+        }
+
+        // Simulación de la respuesta del backend (Para la visión del producto final)
+        const getSimulatedResponse = (message) => {
+            const lowerMessage = message.toLowerCase();
+            
+            if (lowerMessage.includes('lavadora') && lowerMessage.includes('ruido')) {
+                return `Basado en el manual de la Serie 6, un ruido metálico suele indicar dos causas probables:<br><br>
+                        1. <strong class="text-atmira-pink">OBJETO EN EL FILTRO:</strong><br>Monedas o llaves atrapadas.<br>
+                        2. <strong class="text-atmira-pink">RODAMIENTOS DESGASTADOS:</strong><br>Si el ruido es constante.<br><br>
+                        ¿Quieres que te guíe para revisar el filtro de la bomba primero? Es lo más sencillo.`;
+            } else if (lowerMessage.includes('filtro') || lowerMessage.includes('si')) {
+                return `Perfecto. Sigue estos pasos:<br><br>
+                        1. Desconecta la lavadora de la corriente.<br>
+                        2. Abre la tapa pequeña en la esquina inferior derecha del panel frontal.<br>
+                        3. Coloca una toalla debajo, desenrosca la tapa del filtro lentamente.<br>
+                        4. Retira cualquier objeto extraño y enjuaga el filtro con agua.`;
+            }
+            
+            return "Interesante. Como SLM en Databricks, estoy procesando tu consulta con mis pesos ajustados. En producción, buscaría en la base de datos vectorial (RAG) los manuales técnicos correspondientes a tu problema. ¿Puedes darme más detalles?";
+        };
+
+        // Renderizar mensaje del usuario
+        const appendUserMessage = (text) => {
+            const msgHTML = `
+                <div class="flex items-start gap-4 justify-end">
+                    <div class="bg-atmira-navy text-white p-4 rounded-2xl rounded-tr-none shadow-md max-w-[85%] sm:max-w-[75%]">
+                        <p class="leading-relaxed">${text}</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center shadow-sm flex-shrink-0 border border-slate-300">
+                        <i data-lucide="user" class="text-slate-600 w-5 h-5"></i>
+                    </div>
+                </div>
+            `;
+            chatContainer.insertAdjacentHTML('beforeend', msgHTML);
+            lucide.createIcons();
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        // Renderizar mensaje del bot
+        const appendBotMessage = (htmlContent) => {
+            const msgHTML = `
+                <div class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full bg-atmira-pink flex items-center justify-center shadow-lg shadow-atmira-pink/30 flex-shrink-0">
+                        <i data-lucide="bot" class="text-white w-6 h-6"></i>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 max-w-[85%] sm:max-w-[75%] text-slate-700 leading-relaxed">
+                        <h4 class="text-xs font-bold text-atmira-pink mb-2">AGENTE DIY (QWEN 2.5)</h4>
+                        <div>${htmlContent}</div>
+                    </div>
+                </div>
+            `;
+            chatContainer.insertAdjacentHTML('beforeend', msgHTML);
+            lucide.createIcons();
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+
+        const buildRetryButton = () => `
+            <div class="mt-3">
+                <button
+                    type="button"
+                    onclick="retryLastQuery()"
+                    class="inline-flex items-center gap-2 rounded-lg border border-atmira-pink/30 bg-atmira-pink/10 px-3 py-2 text-sm font-medium text-atmira-pink hover:bg-atmira-pink hover:text-white transition-colors"
+                >
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    <span>Regenerar consulta</span>
+                </button>
+            </div>
+        `;
+
+        // Mostrar indicador de "escribiendo..."
+        const showTypingIndicator = () => {
+            const id = 'typing-' + Date.now();
+            const typingHTML = `
+                <div id="${id}" class="flex items-start gap-4">
+                    <div class="w-10 h-10 rounded-full bg-atmira-pink flex items-center justify-center shadow-lg shadow-atmira-pink/30 flex-shrink-0">
+                        <i data-lucide="bot" class="text-white w-6 h-6"></i>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 flex items-center h-12">
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            chatContainer.insertAdjacentHTML('beforeend', typingHTML);
+            lucide.createIcons();
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            return id;
+        };
+
+        const removeElement = (id) => {
+            const el = document.getElementById(id);
+            if(el) el.remove();
+        };
+
+        const buildBackendErrorMessage = (message) => {
+            let errorText = "Error de conexión con el backend.";
+            if (message) {
+                errorText = message;
+            }
+            return `<span class='text-red-500'>${errorText}</span>${buildRetryButton()}`;
+        };
+
+        async function submitQuery(text, options = {}) {
+            const { showUserBubble = true, modeOverride = null } = options;
+            if (!text) return;
+
+            const selectedMode = modeOverride || document.querySelector('input[name="responseMode"]:checked')?.value || 'assistant';
+            lastRequest = { text, mode: selectedMode };
+
+            if (showUserBubble) {
+                appendUserMessage(text);
+            }
+
+            userInput.value = '';
+            sendBtn.disabled = true;
+            const typingId = showTypingIndicator();
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, mode: selectedMode })
+                });
+
+                const isJson = response.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await response.json() : null;
+                removeElement(typingId);
+
+                if (!response.ok) {
+                    const fallbackMessage = response.status === 504
+                        ? 'La consulta tardó demasiado y el proxy agotó el tiempo de espera.'
+                        : 'Error de conexión con el backend.';
+                    appendBotMessage(buildBackendErrorMessage(data?.error || fallbackMessage));
+                } else {
+                    appendBotMessage(data.response);
+                }
+            } catch (error) {
+                removeElement(typingId);
+                appendBotMessage(buildBackendErrorMessage());
+            } finally {
+                sendBtn.disabled = false;
+                userInput.focus();
+                lucide.createIcons();
+            }
+        }
+
+        async function retryLastQuery() {
+            if (!lastRequest || sendBtn.disabled) return;
+            await submitQuery(lastRequest.text, { showUserBubble: false, modeOverride: lastRequest.mode });
+        }
+
+        window.retryLastQuery = retryLastQuery;
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            await submitQuery(text);
+        });
+    </script>
+</body>
+</html>
