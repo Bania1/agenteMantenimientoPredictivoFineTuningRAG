@@ -58,6 +58,17 @@
             20% { opacity: 1; transform: scale(1.2); }
             100% { opacity: 0.2; transform: scale(0.8); }
         }
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        .tech-response pre {
+            max-height: min(45vh, 420px);
+            overflow: auto;
+            white-space: pre;
+        }
+        .mobile-safe-bottom {
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+        }
     </style>
 </head>
 <body class="bg-atmira-light min-h-[100dvh] md:h-screen flex overflow-hidden font-sans text-slate-800">
@@ -146,6 +157,50 @@
         </div>
     </aside>
 
+    <div id="mobileOptionsOverlay" class="fixed inset-0 z-40 hidden bg-slate-950/45 md:hidden"></div>
+    <aside id="mobileOptionsPanel" class="fixed inset-x-0 bottom-0 z-50 hidden translate-y-full rounded-t-3xl bg-white shadow-2xl transition-transform duration-300 md:hidden">
+        <div class="mx-auto mt-3 h-1.5 w-14 rounded-full bg-slate-300"></div>
+        <div class="flex items-center justify-between px-5 py-4">
+            <div>
+                <h2 class="text-lg font-semibold text-slate-900">Opciones de consulta</h2>
+                <p class="text-xs uppercase tracking-[0.18em] text-slate-500">Modo y contexto</p>
+            </div>
+            <button id="closeOptionsBtn" class="rounded-lg bg-slate-100 p-2 text-slate-700" aria-label="Cerrar opciones">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="space-y-4 px-5 pb-6 pt-1 mobile-safe-bottom">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</div>
+                <div class="mt-3 flex flex-col gap-3">
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <input type="radio" name="responseModeMobile" value="assistant" checked>
+                        <span>Modelo conversacional</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-slate-700">
+                        <input type="radio" name="responseModeMobile" value="extractor">
+                        <span>Modelo extractor</span>
+                    </label>
+                </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <div class="text-sm font-semibold text-slate-800">Usar RAG</div>
+                        <p class="mt-1 text-xs text-slate-500">Activa o desactiva el contexto vectorial antes de enviar la consulta.</p>
+                    </div>
+                    <label class="inline-flex shrink-0 items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+                        <input id="ragToggleMobile" type="checkbox" class="peer sr-only" checked>
+                        <span class="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500">
+                            <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+            <p class="text-xs leading-relaxed text-slate-500">En móvil mantenemos estas opciones en un panel separado para que el chat tenga más espacio visible.</p>
+        </div>
+    </aside>
+
     <!-- Área Principal de Chat -->
     <main class="flex-1 flex flex-col relative">
         <!-- Header Móvil -->
@@ -177,46 +232,43 @@
         </div>
 
         <!-- Área de Input -->
-        <div class="p-4 sm:p-6 bg-white border-t border-slate-200 z-10">
-            
+        <div class="border-t border-slate-200 bg-white p-4 sm:p-6 z-10 mobile-safe-bottom">
+            <div class="mb-4 hidden rounded-xl border border-slate-200 bg-slate-50 p-3 md:block">
+                <div class="flex flex-col gap-4 xl:flex-row xl:flex-wrap xl:items-center">
+                    <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</span>
+                    <div class="flex flex-wrap items-center gap-4">
+                        <label class="flex items-center gap-2 text-sm text-slate-700">
+                            <input type="radio" name="responseMode" value="assistant" checked>
+                            <span>Modelo conversacional</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-sm text-slate-700">
+                            <input type="radio" name="responseMode" value="extractor">
+                            <span>Modelo extractor</span>
+                        </label>
+                    </div>
+                    <div class="hidden h-6 w-px bg-slate-300 xl:block"></div>
+                    <label class="inline-flex items-center justify-between gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+                        <span class="font-medium">Usar RAG</span>
+                        <input id="ragToggle" type="checkbox" class="peer sr-only" checked>
+                        <span class="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500">
+                            <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
+                </div>
+                <p class="mt-3 text-[11px] text-slate-500">En escritorio dejamos estas opciones visibles para comparar rápido la salida con y sin contexto vectorial.</p>
+            </div>
 
-            <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50">
+            <div class="mb-4 flex items-center gap-2 md:hidden">
                 <button
                     id="mobileOptionsToggle"
                     type="button"
-                    class="flex w-full items-center justify-between px-4 py-3 text-left md:hidden"
-                    aria-expanded="false"
-                    aria-controls="queryOptionsContent"
+                    class="inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm"
                 >
-                    <div>
-                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Opciones de consulta</div>
-                        <div class="text-sm text-slate-700">Modo, RAG y ajustes de salida</div>
-                    </div>
-                    <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" data-options-icon></i>
+                    <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
+                    <span>Opciones de consulta</span>
                 </button>
-                <div id="queryOptionsContent" class="hidden border-t border-slate-200 px-4 py-4 md:block md:border-t-0 md:px-3 md:py-3">
-                    <div class="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-center">
-                        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</span>
-                        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                            <label class="flex items-center gap-2 text-sm text-slate-700">
-                                <input type="radio" name="responseMode" value="assistant" checked>
-                                <span>Modelo conversacional</span>
-                            </label>
-                            <label class="flex items-center gap-2 text-sm text-slate-700">
-                                <input type="radio" name="responseMode" value="extractor">
-                                <span>Modelo extractor</span>
-                            </label>
-                        </div>
-                        <div class="hidden h-6 w-px bg-slate-300 md:block"></div>
-                        <label class="inline-flex items-center justify-between gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm sm:w-auto">
-                            <span class="font-medium">Usar RAG</span>
-                            <input id="ragToggle" type="checkbox" class="peer sr-only" checked>
-                            <span class="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500">
-                                <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
-                            </span>
-                        </label>
-                    </div>
-                    <p class="mt-3 text-[11px] text-slate-500">Por defecto se usa la respuesta conversacional. Puedes apagar el RAG para comparar la respuesta con y sin contexto vectorial.</p>
+                <div id="mobileQuickState" class="rounded-xl border border-slate-200 bg-white px-3 py-3 text-[11px] text-slate-500 shadow-sm">
+                    Conversacional · RAG on
                 </div>
             </div>
 
@@ -255,13 +307,18 @@
         const chatContainer = document.getElementById('chatContainer');
         const sendBtn = document.getElementById('sendBtn');
         const ragToggle = document.getElementById('ragToggle');
+        const ragToggleMobile = document.getElementById('ragToggleMobile');
         const infoBtn = document.getElementById('infoBtn');
         const closeInfoBtn = document.getElementById('closeInfoBtn');
         const mobileInfoPanel = document.getElementById('mobileInfoPanel');
         const mobileInfoOverlay = document.getElementById('mobileInfoOverlay');
+        const mobileOptionsPanel = document.getElementById('mobileOptionsPanel');
+        const mobileOptionsOverlay = document.getElementById('mobileOptionsOverlay');
+        const closeOptionsBtn = document.getElementById('closeOptionsBtn');
         const mobileOptionsToggle = document.getElementById('mobileOptionsToggle');
-        const queryOptionsContent = document.getElementById('queryOptionsContent');
-        const optionsIcon = mobileOptionsToggle?.querySelector('[data-options-icon]');
+        const responseModeDesktopInputs = Array.from(document.querySelectorAll('input[name="responseMode"]'));
+        const responseModeMobileInputs = Array.from(document.querySelectorAll('input[name="responseModeMobile"]'));
+        const mobileQuickState = document.getElementById('mobileQuickState');
         let lastRequest = null;
 
         const openMobileInfo = () => {
@@ -280,12 +337,47 @@
             }, 250);
         };
 
-        const toggleMobileOptions = () => {
-            if (!mobileOptionsToggle || !queryOptionsContent) return;
-            const expanded = mobileOptionsToggle.getAttribute('aria-expanded') === 'true';
-            mobileOptionsToggle.setAttribute('aria-expanded', String(!expanded));
-            queryOptionsContent.classList.toggle('hidden', expanded);
-            optionsIcon?.classList.toggle('rotate-180', !expanded);
+        const openMobileOptions = () => {
+            mobileOptionsOverlay?.classList.remove('hidden');
+            mobileOptionsPanel?.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                mobileOptionsPanel?.classList.remove('translate-y-full');
+            });
+        };
+
+        const closeMobileOptions = () => {
+            mobileOptionsPanel?.classList.add('translate-y-full');
+            setTimeout(() => {
+                mobileOptionsOverlay?.classList.add('hidden');
+                mobileOptionsPanel?.classList.add('hidden');
+            }, 250);
+        };
+
+        const getSelectedMode = () => {
+            return responseModeDesktopInputs.find((input) => input.checked)?.value || 'assistant';
+        };
+
+        const syncModeSelection = (mode) => {
+            responseModeDesktopInputs.forEach((input) => {
+                input.checked = input.value === mode;
+            });
+            responseModeMobileInputs.forEach((input) => {
+                input.checked = input.value === mode;
+            });
+            updateMobileQuickState();
+        };
+
+        const syncRagSelection = (checked) => {
+            if (ragToggle) ragToggle.checked = checked;
+            if (ragToggleMobile) ragToggleMobile.checked = checked;
+            updateMobileQuickState();
+        };
+
+        const updateMobileQuickState = () => {
+            if (!mobileQuickState) return;
+            const modeText = getSelectedMode() === 'assistant' ? 'Conversacional' : 'Extractor';
+            const ragText = ragToggle?.checked ? 'RAG on' : 'RAG off';
+            mobileQuickState.textContent = `${modeText} · ${ragText}`;
         };
 
         // Función auxiliar para rellenar el input desde los botones de sugerencia
@@ -395,14 +487,18 @@
 
         // Renderizar mensaje del bot
         const appendBotMessage = (htmlContent) => {
+            const isTechnicalResponse = htmlContent.includes('Modo validacion del extractor') || htmlContent.includes('tech-response');
+            const bubbleWidthClass = isTechnicalResponse
+                ? 'w-full max-w-full md:max-w-[88%]'
+                : 'w-full max-w-full sm:max-w-[92%] md:max-w-[78%]';
             const msgHTML = `
                 <div class="flex items-start gap-4">
                     <div class="w-10 h-10 rounded-full bg-atmira-pink flex items-center justify-center shadow-lg shadow-atmira-pink/30 flex-shrink-0">
                         <i data-lucide="bot" class="text-white w-6 h-6"></i>
                     </div>
-                    <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 max-w-[85%] sm:max-w-[75%] text-slate-700 leading-relaxed">
+                    <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 ${bubbleWidthClass} text-slate-700 leading-relaxed">
                         <h4 class="text-xs font-bold text-atmira-pink mb-2">AGENTE DIY (QWEN 2.5)</h4>
-                        <div>${htmlContent}</div>
+                        <div class="${isTechnicalResponse ? 'tech-response' : ''}">${htmlContent}</div>
                     </div>
                 </div>
             `;
@@ -462,7 +558,7 @@
             const { showUserBubble = true, modeOverride = null, useRagOverride = null } = options;
             if (!text) return;
 
-            const selectedMode = modeOverride || document.querySelector('input[name="responseMode"]:checked')?.value || 'assistant';
+            const selectedMode = modeOverride || getSelectedMode();
             const useRag = useRagOverride ?? ragToggle.checked;
             lastRequest = { text, mode: selectedMode, useRag };
 
@@ -513,7 +609,18 @@
         infoBtn?.addEventListener('click', openMobileInfo);
         closeInfoBtn?.addEventListener('click', closeMobileInfo);
         mobileInfoOverlay?.addEventListener('click', closeMobileInfo);
-        mobileOptionsToggle?.addEventListener('click', toggleMobileOptions);
+        mobileOptionsToggle?.addEventListener('click', openMobileOptions);
+        closeOptionsBtn?.addEventListener('click', closeMobileOptions);
+        mobileOptionsOverlay?.addEventListener('click', closeMobileOptions);
+        responseModeDesktopInputs.forEach((input) => {
+            input.addEventListener('change', () => syncModeSelection(input.value));
+        });
+        responseModeMobileInputs.forEach((input) => {
+            input.addEventListener('change', () => syncModeSelection(input.value));
+        });
+        ragToggle?.addEventListener('change', () => syncRagSelection(ragToggle.checked));
+        ragToggleMobile?.addEventListener('change', () => syncRagSelection(ragToggleMobile.checked));
+        updateMobileQuickState();
 
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
