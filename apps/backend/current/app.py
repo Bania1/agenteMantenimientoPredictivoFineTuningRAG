@@ -86,6 +86,22 @@ _milvus_ok = False
 _milvus_error = "No inicializado"
 
 
+def append_follow_up_question(text: str, language: str) -> str:
+    closing = "Do you need help with anything else?" if language == "English" else "¿Necesitas que te ayude con algo mas?"
+    text = text.strip()
+    if not text:
+        return closing
+    normalized_text = norm(text)
+    normalized_closings = {norm(closing)}
+    if language != "English":
+        normalized_closings.add(norm("¿Necesitas ayuda con algo más?"))
+        normalized_closings.add(norm("¿Necesitas que te ayude con algo más?"))
+    if any(option in normalized_text for option in normalized_closings):
+        return text
+    separator = " " if text.endswith((".", "!", "?")) else ". "
+    return f"{text}{separator}{closing}"
+
+
 def load_domain_catalog() -> dict[str, Any]:
     with DOMAIN_CATALOG_PATH.open("r", encoding="utf-8") as handle:
         return json.load(handle)
@@ -313,6 +329,49 @@ def extract_first_json(text: str) -> str | None:
     return None
 
 
+def sanitize_extraction_json_text(json_text: str) -> str:
+    text = json_text.replace("\r\n", "\n").replace("\r", "\n").replace("\u00ad", "")
+    text = re.sub(r"-\n\s+", "", text)
+
+    pieces: list[str] = []
+    inside_string = False
+    escape = False
+    for char in text:
+        if inside_string:
+            if escape:
+                pieces.append(char)
+                escape = False
+                continue
+            if char == "\\":
+                pieces.append(char)
+                escape = True
+                continue
+            if char == '"':
+                pieces.append(char)
+                inside_string = False
+                continue
+            if char == "\n":
+                pieces.append(" ")
+                continue
+            pieces.append(char)
+            continue
+        pieces.append(char)
+        if char == '"':
+            inside_string = True
+
+    text = "".join(pieces)
+    text = re.sub(r'[ \t]{2,}', " ", text)
+    return text
+
+
+def loads_json_lenient(json_text: str) -> dict[str, Any] | None:
+    sanitized = sanitize_extraction_json_text(json_text)
+    try:
+        return json.loads(sanitized)
+    except json.JSONDecodeError:
+        return None
+
+
 def canonicalize_keys(data: dict[str, Any]) -> dict[str, Any]:
     normalized: dict[str, Any] = {}
     for key, value in data.items():
@@ -345,6 +404,24 @@ def normalize_severity(value: Any) -> int | str:
     return int(match.group())
 
 
+def normalize_steps_value(value: Any) -> list[str] | str:
+    if value is None:
+        return "No especificado"
+    if isinstance(value, list):
+        cleaned = [clean_field(step) for step in value if clean_field(step)]
+        return cleaned or "No especificado"
+    if isinstance(value, str):
+        cleaned = clean_field(value)
+        if not cleaned:
+            return "No especificado"
+        parts = [segment.strip(" -") for segment in re.split(r"\s*(?:\d+\.\s+|;\s+|\|\s+)\s*", cleaned) if segment.strip(" -")]
+        if len(parts) > 1:
+            return parts
+        return cleaned
+    cleaned = clean_field(value)
+    return cleaned or "No especificado"
+
+
 def fill_missing_fields(data: dict[str, Any]) -> dict[str, Any]:
     filled = dict(data)
     filled.setdefault("aparato", "No especificado")
@@ -352,6 +429,11 @@ def fill_missing_fields(data: dict[str, Any]) -> dict[str, Any]:
     filled.setdefault("codigo_error", "No especificado")
     filled.setdefault("causa_probable", "No especificado")
     filled.setdefault("pasos_reparacion", "No especificado")
+    filled["aparato"] = clean_field(filled.get("aparato"))
+    filled["sintoma"] = clean_field(filled.get("sintoma"))
+    filled["codigo_error"] = clean_field(filled.get("codigo_error")) or "No especificado"
+    filled["causa_probable"] = clean_field(filled.get("causa_probable")) or "No especificado"
+    filled["pasos_reparacion"] = normalize_steps_value(filled.get("pasos_reparacion"))
     filled["porcentaje_certeza"] = normalize_percentage(filled.get("porcentaje_certeza"))
     filled["grado_peligrosidad"] = normalize_severity(filled.get("grado_peligrosidad"))
     return filled
@@ -360,9 +442,8 @@ def fill_missing_fields(data: dict[str, Any]) -> dict[str, Any]:
 def validate_extraction_json(json_text: str | None) -> dict[str, Any] | None:
     if not json_text:
         return None
-    try:
-        data = json.loads(json_text)
-    except json.JSONDecodeError:
+    data = loads_json_lenient(json_text)
+    if data is None:
         return None
     data = canonicalize_keys(data)
     if not isinstance(data, dict):
@@ -537,7 +618,8 @@ def build_structured_assistant_response(user_message: str, extracted: dict[str, 
             parts.append(f"Suggested next steps: {joined_steps}")
         else:
             parts.append("No safe repair steps were extracted with enough confidence.")
-        return " ".join(parts)
+        parts.append("If the issue persists or something does not match what you observe, contact the brand's official technical support.")
+        return append_follow_up_question(" ".join(parts), language)
     parts = [f"Hemos detectado un problema en {appliance}: {symptom}."]
     if error_code != "No especificado":
         parts.append(f"El codigo extraido es {error_code}.")
@@ -550,7 +632,106 @@ def build_structured_assistant_response(user_message: str, extracted: dict[str, 
         parts.append(f"Pasos sugeridos: {joined_steps}")
     else:
         parts.append("No se han extraido pasos de reparacion seguros con suficiente confianza.")
-    return " ".join(parts)
+    parts.append("Si el problema sigue igual o no encaja con lo que ves en el equipo, lo mas recomendable es contactar con el soporte tecnico oficial de la marca.")
+    return append_follow_up_question(" ".join(parts), language)
+
+
+def build_rag_supported_fallback(user_message: str, rag_hits: list[dict[str, Any]]) -> str:
+    language = detect_output_language(user_message)
+    if not rag_hits:
+        if language == "English":
+            return append_follow_up_question(
+                "I could not extract a reliable diagnosis from the model and I do not have enough supporting context to answer safely. The most sensible option is to contact the brand's official technical support.",
+                language,
+            )
+        return append_follow_up_question(
+            "No he podido extraer un diagnostico fiable del modelo y tampoco tengo contexto suficiente para responder con seguridad. Lo mas recomendable es contactar con el soporte tecnico oficial de la marca.",
+            language,
+        )
+
+    top_hit = rag_hits[0]
+    aparato = clean_field(top_hit.get("aparato")) or "el electrodomestico"
+    causa = clean_field(top_hit.get("causa_probable")) or "No especificado"
+    pasos = normalize_steps(top_hit.get("pasos_reparacion"))
+    if language == "English":
+        parts = [
+            f"I could not validate the extractor output cleanly, but I did recover a similar case related to {aparato}.",
+            f"The closest likely cause in the knowledge base is: {causa}.",
+        ]
+        if pasos:
+            joined_steps = " ".join(f"{index + 1}. {step}." for index, step in enumerate(pasos[:3]))
+            parts.append(f"Conservative next steps: {joined_steps}")
+        parts.append("If the symptoms do not match your appliance exactly, avoid forcing a repair and contact the brand's official technical support.")
+        return append_follow_up_question(" ".join(parts), language)
+
+    parts = [
+        f"No he podido validar del todo la salida del extractor, pero si he recuperado un caso parecido relacionado con {aparato}.",
+        f"La causa mas cercana encontrada en la base es: {causa}.",
+    ]
+    if pasos:
+        joined_steps = " ".join(f"{index + 1}. {step}." for index, step in enumerate(pasos[:3]))
+        parts.append(f"Como orientacion prudente, los pasos sugeridos serian: {joined_steps}")
+    parts.append("Si los sintomas no encajan bien con tu equipo, evita forzar la reparacion y contacta con el soporte tecnico oficial de la marca.")
+    return append_follow_up_question(" ".join(parts), language)
+
+
+def build_grounded_assistant_response(
+    user_message: str,
+    extracted: dict[str, Any],
+    rag_hits: list[dict[str, Any]],
+) -> str:
+    language = detect_output_language(user_message)
+    appliance = str(extracted.get("aparato", "el electrodomestico"))
+    symptom = str(extracted.get("sintoma", "el problema descrito"))
+    cause = str(extracted.get("causa_probable", "No especificado"))
+    certainty = extracted.get("porcentaje_certeza", "No especificado")
+    error_code = str(extracted.get("codigo_error", "No especificado"))
+    severity = extracted.get("grado_peligrosidad", "No especificado")
+    steps = normalize_steps(extracted.get("pasos_reparacion"))
+    rag_hint = rag_hits[0] if rag_hits else {}
+
+    if language == "English":
+        parts = [f"I detected a problem in {appliance}: {symptom}."]
+        if error_code != "No especificado":
+            parts.append(f"The extracted error code is {error_code}.")
+        if cause != "No especificado":
+            parts.append(f"The most likely cause right now is: {cause}.")
+        if certainty != "No especificado":
+            parts.append(f"Estimated confidence: {certainty}%.")
+        if rag_hits:
+            rag_appliance = clean_field(rag_hint.get("aparato")) or appliance
+            parts.append(f"I also found similar registered cases for {rag_appliance}, which reinforces this diagnosis.")
+        if steps:
+            joined_steps = " ".join(f"{index + 1}. {step}." for index, step in enumerate(steps[:3]))
+            parts.append(f"Prudent next steps: {joined_steps}")
+        else:
+            parts.append("I do not have enough safe repair steps to recommend a reliable intervention.")
+        if severity == 1:
+            parts.append("This case looks critical, so stop manipulating the appliance and contact the brand's official technical support immediately.")
+        else:
+            parts.append("If the symptoms do not match what you observe or the appliance keeps failing, contact the brand's official technical support.")
+        return append_follow_up_question(" ".join(parts), language)
+
+    parts = [f"He detectado un problema en {appliance}: {symptom}."]
+    if error_code != "No especificado":
+        parts.append(f"El codigo extraido es {error_code}.")
+    if cause != "No especificado":
+        parts.append(f"La causa probable mas razonable ahora mismo es: {cause}.")
+    if certainty != "No especificado":
+        parts.append(f"La certeza estimada es del {certainty}%.")
+    if rag_hits:
+        rag_appliance = clean_field(rag_hint.get("aparato")) or appliance
+        parts.append(f"Ademas, he encontrado averias parecidas registradas para {rag_appliance}, lo que refuerza esta orientacion.")
+    if steps:
+        joined_steps = " ".join(f"{index + 1}. {step}." for index, step in enumerate(steps[:3]))
+        parts.append(f"Como siguientes pasos prudentes, te sugiero: {joined_steps}")
+    else:
+        parts.append("No tengo pasos de reparacion suficientemente fiables como para recomendar una intervencion con seguridad.")
+    if severity == 1:
+        parts.append("Este caso parece critico, asi que deja de manipular el aparato y contacta cuanto antes con el soporte tecnico oficial de la marca.")
+    else:
+        parts.append("Si los sintomas no encajan bien con lo que ves en tu equipo o el fallo persiste, lo mas recomendable es contactar con el soporte tecnico oficial de la marca.")
+    return append_follow_up_question(" ".join(parts), language)
 
 
 def call_ollama_generate(model: str, prompt: str, num_predict: int = 350) -> str:
@@ -588,13 +769,15 @@ def build_assistant_prompt(
         rag_block = f"\n[CONTEXTO RAG]\n{contexto_rag}\n"
     return f"""Eres un asistente tecnico multilingue especializado en electrodomesticos.
 Responde solo en {target_language}. No cambies de idioma.
-Se breve, practico y cuidadoso con la seguridad.
+Escribe una respuesta de longitud corta-media, algo mas desarrollada que una sola frase, pero sin hacerse pesada visualmente.
+Se practico, claro y cuidadoso con la seguridad.
 Convierte el diagnostico extraido en una respuesta natural pensada para el usuario final.
 No inventes hechos que no esten respaldados por los datos extraidos ni por el contexto RAG.
 Si la extraccion contiene detalles sospechosos o incoherentes, no los presentes como hechos confirmados.
 Si la peligrosidad extraida es 1, advierte de forma explicita que el usuario debe dejar de manipular el aparato y contactar con el soporte tecnico oficial si hace falta.
 No menciones etiquetas internas, nombres de bloques, numeraciones de casos recuperados ni detalles de implementacion.
 No digas cosas como "caso recuperado", "contexto RAG", "transcripcion" o frases parecidas.
+Si no tienes informacion suficiente para recomendar una accion fiable, dilo con claridad y sugiere contactar con el soporte tecnico oficial.
 {rag_block}
 [USER_MESSAGE]
 {user_message}
@@ -607,6 +790,11 @@ No digas cosas como "caso recuperado", "contexto RAG", "transcripcion" o frases 
 
 [TASK]
 Escribe una respuesta clara para el usuario final en texto plano.
+Debe incluir, cuando sea posible:
+1. un resumen breve del problema detectado,
+2. la causa probable o la incertidumbre si no esta clara,
+3. uno o varios pasos siguientes prudentes,
+4. una pregunta final pidiendo si necesita algo mas.
 Si faltan campos importantes o no son fiables, dilo de forma clara en vez de inventar detalles.
 No devuelvas JSON."""
 
@@ -628,7 +816,8 @@ def chat() -> tuple[Any, int] | Any:
                 "response": (
                     "<strong>Fuera de dominio.</strong><br>"
                     "Este prototipo solo esta preparado ahora mismo para "
-                    "consultas sobre averias y soporte tecnico de electrodomesticos."
+                    "consultas sobre averias y soporte tecnico de electrodomesticos. "
+                    "Si necesitas algo relacionado con este dominio, dime el aparato y el sintoma principal."
                 ),
                 "mode": mode,
             }
@@ -642,7 +831,7 @@ def chat() -> tuple[Any, int] | Any:
         raw_response = call_ollama_generate(
             EXTRACTOR_MODEL,
             build_prompt(message, contexto_rag),
-            num_predict=350,
+            num_predict=500,
         )
     except requests.RequestException as exc:
         return jsonify({"error": f"Error al consultar Ollama: {exc}"}), 502
@@ -651,13 +840,21 @@ def chat() -> tuple[Any, int] | Any:
     extracted = validate_extraction_json(json_text)
 
     if extracted is None:
+        if mode == "assistant":
+            assistant_text = build_rag_supported_fallback(message, rag_hits)
+            response_html = (
+                f"<div>{html.escape(assistant_text).replace(chr(10), '<br>')}</div>"
+                f"{build_rag_notice(rag_hits)}"
+            )
+            return jsonify({"response": response_html, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits})
+
         fallback = (
             "<strong>El extractor no devolvio un JSON valido.</strong><br>"
             "Salida bruta del modelo para diagnostico:<br><br>"
             f"<pre>{html.escape(raw_response)}</pre>"
             f"{build_rag_notice(rag_hits)}"
         )
-        return jsonify({"response": fallback, "mode": mode, "rag_used": bool(rag_hits)})
+        return jsonify({"response": fallback, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits})
 
     issues = assess_extraction_consistency(message, extracted)
 
@@ -673,17 +870,10 @@ def chat() -> tuple[Any, int] | Any:
 
     if issues:
         assistant_text = build_inconsistent_extraction_response(message, extracted, issues)
-    elif extracted.get("grado_peligrosidad") == 1:
-        assistant_text = build_structured_assistant_response(message, extracted)
     else:
-        try:
-            assistant_text = call_ollama_generate(
-                RESPONSE_MODEL,
-                build_assistant_prompt(message, extracted, issues, contexto_rag),
-                num_predict=260,
-            )
-        except requests.RequestException:
-            assistant_text = build_structured_assistant_response(message, extracted)
+        assistant_text = build_grounded_assistant_response(message, extracted, rag_hits)
+
+    assistant_text = append_follow_up_question(assistant_text, detect_output_language(message))
 
     response_html = (
         f"<div>{html.escape(assistant_text).replace(chr(10), '<br>')}</div>"
