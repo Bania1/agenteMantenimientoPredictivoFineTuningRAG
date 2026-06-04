@@ -540,6 +540,15 @@ def build_rag_notice(rag_hits: list[dict[str, Any]]) -> str:
     )
 
 
+def build_response_section(title: str, body: str) -> str:
+    return (
+        "<div style='margin-top:12px;'>"
+        f"<div style='font-size:12px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#64748b;margin-bottom:6px;'>{html.escape(title)}</div>"
+        f"<div style='color:#0f172a;line-height:1.6;'>{body}</div>"
+        "</div>"
+    )
+
+
 def render_json_response(
     user_message: str,
     data: dict[str, Any],
@@ -551,7 +560,6 @@ def render_json_response(
         "<strong>Modo validacion del extractor</strong><br>"
         "Respuesta JSON generada por el modelo:<br><br>"
         f"<pre>{html.escape(pretty)}</pre>"
-        f"{build_rag_notice(rag_hits)}"
         f"{build_consistency_notice(issues)}"
         f"{build_severity_warning(user_message, data)}"
     )
@@ -734,6 +742,60 @@ def build_grounded_assistant_response(
     return append_follow_up_question(" ".join(parts), language)
 
 
+def render_assistant_response_html(
+    user_message: str,
+    extracted: dict[str, Any],
+    rag_hits: list[dict[str, Any]],
+    issues: list[str],
+) -> str:
+    language = detect_output_language(user_message)
+    appliance = html.escape(str(extracted.get("aparato", "el electrodomestico")))
+    symptom = html.escape(str(extracted.get("sintoma", "el problema descrito")))
+    cause = html.escape(str(extracted.get("causa_probable", "No especificado")))
+    certainty = extracted.get("porcentaje_certeza", "No especificado")
+    error_code = html.escape(str(extracted.get("codigo_error", "No especificado")))
+    severity = extracted.get("grado_peligrosidad", "No especificado")
+    steps = normalize_steps(extracted.get("pasos_reparacion"))
+
+    summary_lines: list[str] = [f"He detectado un problema en <strong>{appliance}</strong>: {symptom}."]
+    if error_code != "No especificado":
+        summary_lines.append(f"El codigo extraido es <strong>{error_code}</strong>.")
+    if certainty != "No especificado":
+        summary_lines.append(f"La certeza estimada es del <strong>{certainty}%</strong>.")
+    if rag_hits:
+        summary_lines.append("Ademas, he encontrado averias parecidas en la base vectorial, lo que ayuda a reforzar esta orientacion.")
+    if issues:
+        summary_lines.append("Aun asi, hay incoherencias en la extraccion y conviene interpretar el diagnostico con prudencia.")
+
+    if steps:
+        steps_html = "<ul style='margin:8px 0 0 18px;padding:0;'>" + "".join(
+            f"<li style='margin-bottom:6px;'>{html.escape(step)}</li>" for step in steps[:4]
+        ) + "</ul>"
+    else:
+        if language == "English":
+            steps_html = "<p style='margin:0;'>I do not have enough safe repair steps to recommend a reliable intervention.</p>"
+        else:
+            steps_html = "<p style='margin:0;'>No tengo pasos de reparacion suficientemente fiables como para recomendar una intervencion con seguridad.</p>"
+
+    recommendation = (
+        "Este caso parece critico, asi que deja de manipular el aparato y contacta cuanto antes con el soporte tecnico oficial de la marca."
+        if severity == 1
+        else "Si los sintomas no encajan bien con lo que ves en tu equipo o el fallo persiste, lo mas recomendable es contactar con el soporte tecnico oficial de la marca."
+    )
+
+    closing = "Do you need help with anything else?" if language == "English" else "¿Necesitas que te ayude con algo mas?"
+
+    return (
+        "<div style='display:flex;flex-direction:column;gap:10px;'>"
+        f"{build_response_section('Resumen del caso', ' '.join(summary_lines))}"
+        f"{build_response_section('Causa probable', cause)}"
+        f"{build_response_section('Pasos sugeridos', steps_html)}"
+        f"{build_response_section('Recomendacion', html.escape(recommendation))}"
+        f"{build_response_section('Siguiente paso', html.escape(closing))}"
+        "</div>"
+    )
+
+
 def call_ollama_generate(model: str, prompt: str, num_predict: int = 350) -> str:
     payload = {
         "model": model,
@@ -804,6 +866,7 @@ def chat() -> tuple[Any, int] | Any:
     payload = request.get_json(silent=True) or {}
     message = str(payload.get("message", "")).strip()
     mode = str(payload.get("mode", DEFAULT_MODE)).strip().lower() or DEFAULT_MODE
+    use_rag = bool(payload.get("use_rag", True))
     if mode not in {"extractor", "assistant"}:
         mode = DEFAULT_MODE
 
@@ -824,7 +887,7 @@ def chat() -> tuple[Any, int] | Any:
         )
 
     aparato_hint = detect_device_category(message)
-    rag_hits = buscar_fragmentos_rag(message, aparato_hint=aparato_hint, top_k=RAG_TOP_K)
+    rag_hits = buscar_fragmentos_rag(message, aparato_hint=aparato_hint, top_k=RAG_TOP_K) if use_rag else []
     contexto_rag = construir_contexto_rag(rag_hits)
 
     try:
@@ -844,17 +907,15 @@ def chat() -> tuple[Any, int] | Any:
             assistant_text = build_rag_supported_fallback(message, rag_hits)
             response_html = (
                 f"<div>{html.escape(assistant_text).replace(chr(10), '<br>')}</div>"
-                f"{build_rag_notice(rag_hits)}"
             )
-            return jsonify({"response": response_html, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits})
+            return jsonify({"response": response_html, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits, "use_rag": use_rag})
 
         fallback = (
             "<strong>El extractor no devolvio un JSON valido.</strong><br>"
             "Salida bruta del modelo para diagnostico:<br><br>"
             f"<pre>{html.escape(raw_response)}</pre>"
-            f"{build_rag_notice(rag_hits)}"
         )
-        return jsonify({"response": fallback, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits})
+        return jsonify({"response": fallback, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits, "use_rag": use_rag})
 
     issues = assess_extraction_consistency(message, extracted)
 
@@ -865,19 +926,20 @@ def chat() -> tuple[Any, int] | Any:
                 "mode": mode,
                 "rag_used": bool(rag_hits),
                 "rag_hits": rag_hits,
+                "extractor_json": extracted,
+                "use_rag": use_rag,
             }
         )
 
     if issues:
-        assistant_text = build_inconsistent_extraction_response(message, extracted, issues)
+        assistant_html = (
+            f"<div>{html.escape(build_inconsistent_extraction_response(message, extracted, issues)).replace(chr(10), '<br>')}</div>"
+        )
     else:
-        assistant_text = build_grounded_assistant_response(message, extracted, rag_hits)
-
-    assistant_text = append_follow_up_question(assistant_text, detect_output_language(message))
+        assistant_html = render_assistant_response_html(message, extracted, rag_hits, issues)
 
     response_html = (
-        f"<div>{html.escape(assistant_text).replace(chr(10), '<br>')}</div>"
-        f"{build_rag_notice(rag_hits)}"
+        f"{assistant_html}"
         f"{build_consistency_notice(issues)}"
         f"{build_severity_warning(message, extracted)}"
     )
@@ -888,6 +950,7 @@ def chat() -> tuple[Any, int] | Any:
             "extractor_json": extracted,
             "rag_used": bool(rag_hits),
             "rag_hits": rag_hits,
+            "use_rag": use_rag,
         }
     )
 

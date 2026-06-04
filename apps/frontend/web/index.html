@@ -154,20 +154,28 @@
                         <input type="radio" name="responseMode" value="extractor">
                         <span>Modelo extractor</span>
                     </label>
+                    <div class="h-6 w-px bg-slate-300"></div>
+                    <label class="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
+                        <span class="font-medium">Usar RAG</span>
+                        <input id="ragToggle" type="checkbox" class="peer sr-only" checked>
+                        <span class="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500">
+                            <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
+                        </span>
+                    </label>
                 </div>
-                <p class="text-[11px] text-slate-500 mt-2">Por defecto se usa la respuesta conversacional. Cambia a extractor para inspeccionar el JSON estructurado.</p>
+                <p class="text-[11px] text-slate-500 mt-2">Por defecto se usa la respuesta conversacional. Puedes apagar el RAG para comparar la respuesta con y sin contexto vectorial.</p>
             </div>
 
             <!-- Sugerencias -->
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="fillInput('Mi lavadora hace un ruido metálico muy fuerte al centrifugar. ¿Qué puede ser?')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
-                    🔊 Lavadora hace ruido
+                <button onclick="fillInput('El microondas enciende pero no calienta la comida')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
+                    🔥 Microondas no calienta
                 </button>
-                <button onclick="fillInput('La nevera no enfría la parte de abajo')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
-                    ❄️ Nevera no enfría
+                <button onclick="fillInput('Mi microondas funciona pero la comida sale fria')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
+                    🍽️ Comida sale fria
                 </button>
-                <button onclick="fillInput('Me sale el Error E04 en el lavavajillas')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
-                    ⚠️ Error E04 Lavavajillas
+                <button onclick="fillInput('El microondas Beko hace ruido pero no calienta')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
+                    ⚙️ Beko hace ruido
                 </button>
             </div>
 
@@ -192,6 +200,7 @@
         const userInput = document.getElementById('userInput');
         const chatContainer = document.getElementById('chatContainer');
         const sendBtn = document.getElementById('sendBtn');
+        const ragToggle = document.getElementById('ragToggle');
         let lastRequest = null;
 
         // Función auxiliar para rellenar el input desde los botones de sugerencia
@@ -200,24 +209,86 @@
             userInput.focus();
         }
 
-        // Simulación de la respuesta del backend (Para la visión del producto final)
-        const getSimulatedResponse = (message) => {
-            const lowerMessage = message.toLowerCase();
-            
-            if (lowerMessage.includes('lavadora') && lowerMessage.includes('ruido')) {
-                return `Basado en el manual de la Serie 6, un ruido metálico suele indicar dos causas probables:<br><br>
-                        1. <strong class="text-atmira-pink">OBJETO EN EL FILTRO:</strong><br>Monedas o llaves atrapadas.<br>
-                        2. <strong class="text-atmira-pink">RODAMIENTOS DESGASTADOS:</strong><br>Si el ruido es constante.<br><br>
-                        ¿Quieres que te guíe para revisar el filtro de la bomba primero? Es lo más sencillo.`;
-            } else if (lowerMessage.includes('filtro') || lowerMessage.includes('si')) {
-                return `Perfecto. Sigue estos pasos:<br><br>
-                        1. Desconecta la lavadora de la corriente.<br>
-                        2. Abre la tapa pequeña en la esquina inferior derecha del panel frontal.<br>
-                        3. Coloca una toalla debajo, desenrosca la tapa del filtro lentamente.<br>
-                        4. Retira cualquier objeto extraño y enjuaga el filtro con agua.`;
+        const escapeHtml = (value) => String(value ?? '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+
+        const buildDetailToggle = (title, innerHtml, tone = 'slate') => {
+            const tones = {
+                emerald: {
+                    wrapper: 'border-emerald-200 bg-emerald-50/70',
+                    summary: 'text-emerald-700',
+                    body: 'text-emerald-900'
+                },
+                slate: {
+                    wrapper: 'border-slate-200 bg-slate-50',
+                    summary: 'text-slate-700',
+                    body: 'text-slate-800'
+                }
+            };
+            const selectedTone = tones[tone] || tones.slate;
+            return `
+                <details class="mt-3 rounded-xl border ${selectedTone.wrapper} open:shadow-sm">
+                    <summary class="cursor-pointer list-none px-4 py-3 text-sm font-semibold ${selectedTone.summary} flex items-center justify-between">
+                        <span>${title}</span>
+                        <span class="text-xs opacity-70">clic para desplegar</span>
+                    </summary>
+                    <div class="border-t border-black/5 px-4 py-3 text-sm ${selectedTone.body}">
+                        ${innerHtml}
+                    </div>
+                </details>
+            `;
+        };
+
+        const buildRagDetails = (data) => {
+            if (!data?.use_rag) {
+                return buildDetailToggle(
+                    'RAG desactivado',
+                    '<p class="m-0">La consulta se ha ejecutado sin usar contexto vectorial.</p>',
+                    'slate'
+                );
             }
-            
-            return "Interesante. Como SLM en Databricks, estoy procesando tu consulta con mis pesos ajustados. En producción, buscaría en la base de datos vectorial (RAG) los manuales técnicos correspondientes a tu problema. ¿Puedes darme más detalles?";
+            if (!data?.rag_used || !Array.isArray(data?.rag_hits) || data.rag_hits.length === 0) {
+                return buildDetailToggle(
+                    'RAG no utilizado',
+                    '<p class="m-0">No se encontraron casos compatibles en Milvus Lite para esta consulta.</p>',
+                    'slate'
+                );
+            }
+            const items = data.rag_hits.slice(0, 5).map((hit) => `
+                <li class="mb-2">
+                    <div class="font-medium">${escapeHtml(hit.aparato || 'Caso recuperado')}</div>
+                    <div class="text-xs text-emerald-700">Similitud: ${escapeHtml(hit.score ?? '')}</div>
+                    <div class="mt-1 text-xs text-slate-700">${escapeHtml(hit.causa_probable || 'Sin causa registrada')}</div>
+                </li>
+            `).join('');
+            return buildDetailToggle(
+                'RAG activado',
+                `<p class="mb-3">Se han recuperado averias similares desde Milvus Lite.</p><ul class="m-0 ml-5">${items}</ul>`,
+                'emerald'
+            );
+        };
+
+        const buildExtractorJsonDetails = (data) => {
+            if (!data?.extractor_json) return '';
+            const prettyJson = escapeHtml(JSON.stringify(data.extractor_json, null, 2));
+            return buildDetailToggle(
+                'Ver JSON obtenido',
+                `<pre class="m-0 overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">${prettyJson}</pre>`,
+                'slate'
+            );
+        };
+
+        const buildResponseHtml = (data) => {
+            if (!data?.response) return '';
+            const details = [
+                buildRagDetails(data),
+                data?.mode === 'assistant' ? buildExtractorJsonDetails(data) : ''
+            ].filter(Boolean).join('');
+            return `${data.response}${details}`;
         };
 
         // Renderizar mensaje del usuario
@@ -303,11 +374,12 @@
         };
 
         async function submitQuery(text, options = {}) {
-            const { showUserBubble = true, modeOverride = null } = options;
+            const { showUserBubble = true, modeOverride = null, useRagOverride = null } = options;
             if (!text) return;
 
             const selectedMode = modeOverride || document.querySelector('input[name="responseMode"]:checked')?.value || 'assistant';
-            lastRequest = { text, mode: selectedMode };
+            const useRag = useRagOverride ?? ragToggle.checked;
+            lastRequest = { text, mode: selectedMode, useRag };
 
             if (showUserBubble) {
                 appendUserMessage(text);
@@ -321,7 +393,7 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, mode: selectedMode })
+                    body: JSON.stringify({ message: text, mode: selectedMode, use_rag: useRag })
                 });
 
                 const isJson = response.headers.get('content-type')?.includes('application/json');
@@ -334,7 +406,7 @@
                         : 'Error de conexión con el backend.';
                     appendBotMessage(buildBackendErrorMessage(data?.error || fallbackMessage));
                 } else {
-                    appendBotMessage(data.response);
+                    appendBotMessage(buildResponseHtml(data));
                 }
             } catch (error) {
                 removeElement(typingId);
@@ -348,7 +420,7 @@
 
         async function retryLastQuery() {
             if (!lastRequest || sendBtn.disabled) return;
-            await submitQuery(lastRequest.text, { showUserBubble: false, modeOverride: lastRequest.mode });
+            await submitQuery(lastRequest.text, { showUserBubble: false, modeOverride: lastRequest.mode, useRagOverride: lastRequest.useRag });
         }
 
         window.retryLastQuery = retryLastQuery;
