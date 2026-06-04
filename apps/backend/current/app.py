@@ -752,7 +752,6 @@ def render_assistant_response_html(
     appliance = html.escape(str(extracted.get("aparato", "el electrodomestico")))
     symptom = html.escape(str(extracted.get("sintoma", "el problema descrito")))
     cause = html.escape(str(extracted.get("causa_probable", "No especificado")))
-    certainty = extracted.get("porcentaje_certeza", "No especificado")
     error_code = html.escape(str(extracted.get("codigo_error", "No especificado")))
     severity = extracted.get("grado_peligrosidad", "No especificado")
     steps = normalize_steps(extracted.get("pasos_reparacion"))
@@ -760,8 +759,6 @@ def render_assistant_response_html(
     summary_lines: list[str] = [f"He detectado un problema en <strong>{appliance}</strong>: {symptom}."]
     if error_code != "No especificado":
         summary_lines.append(f"El codigo extraido es <strong>{error_code}</strong>.")
-    if certainty != "No especificado":
-        summary_lines.append(f"La certeza estimada es del <strong>{certainty}%</strong>.")
     if rag_hits:
         summary_lines.append("Ademas, he encontrado averias parecidas en la base vectorial, lo que ayuda a reforzar esta orientacion.")
     if issues:
