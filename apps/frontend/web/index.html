@@ -4,7 +4,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Agente DIY - Cátedra Atmira UCO</title>
     <!-- Tailwind CSS para un diseño moderno y minimalista -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -28,6 +28,15 @@
         }
     </script>
     <style>
+        html, body {
+            height: 100%;
+            overflow-x: hidden;
+        }
+        body {
+            overscroll-behavior-y: none;
+            -webkit-text-size-adjust: 100%;
+            touch-action: pan-y;
+        }
         /* Personalización del scrollbar para un look más limpio */
         ::-webkit-scrollbar {
             width: 6px;
@@ -58,20 +67,45 @@
             20% { opacity: 1; transform: scale(1.2); }
             100% { opacity: 0.2; transform: scale(0.8); }
         }
+        .smooth-mobile-scroll {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+        .chat-card,
+        .chat-card * {
+            min-width: 0;
+            box-sizing: border-box;
+        }
+        .detail-card,
+        .detail-card * {
+            min-width: 0;
+        }
         details summary::-webkit-details-marker {
             display: none;
         }
         .tech-response pre {
             max-height: min(45vh, 420px);
             overflow: auto;
-            white-space: pre;
+            -webkit-overflow-scrolling: touch;
+        }
+        .json-viewer pre,
+        .tech-response pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            max-width: 100%;
         }
         .mobile-safe-bottom {
             padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
         }
+        @media (max-width: 767px) {
+            #userInput {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
-<body class="bg-atmira-light min-h-[100dvh] md:h-screen flex overflow-hidden font-sans text-slate-800">
+<body class="bg-atmira-light min-h-[100dvh] md:h-screen flex overflow-x-hidden font-sans text-slate-800">
 
     <!-- Sidebar / Panel de Información -->
     <aside class="w-80 bg-atmira-navy text-white flex flex-col shadow-2xl z-10 hidden md:flex transition-all duration-300">
@@ -158,7 +192,7 @@
     </aside>
 
     <div id="mobileOptionsOverlay" class="fixed inset-0 z-40 hidden bg-slate-950/45 md:hidden"></div>
-    <aside id="mobileOptionsPanel" class="fixed inset-x-0 bottom-0 z-50 hidden translate-y-full rounded-t-3xl bg-white shadow-2xl transition-transform duration-300 md:hidden">
+    <aside id="mobileOptionsPanel" class="fixed inset-x-0 bottom-0 z-50 hidden max-h-[78dvh] translate-y-full rounded-t-3xl bg-white shadow-2xl transition-transform duration-300 md:hidden">
         <div class="mx-auto mt-3 h-1.5 w-14 rounded-full bg-slate-300"></div>
         <div class="flex items-center justify-between px-5 py-4">
             <div>
@@ -169,7 +203,7 @@
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
         </div>
-        <div class="space-y-4 px-5 pb-6 pt-1 mobile-safe-bottom">
+        <div class="smooth-mobile-scroll space-y-4 overflow-y-auto px-5 pb-6 pt-1 mobile-safe-bottom">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</div>
                 <div class="mt-3 flex flex-col gap-3">
@@ -202,7 +236,7 @@
     </aside>
 
     <!-- Área Principal de Chat -->
-    <main class="flex-1 flex flex-col relative">
+    <main class="relative flex min-h-0 flex-1 flex-col">
         <!-- Header Móvil -->
         <header class="md:hidden bg-atmira-navy text-white p-4 flex items-center justify-between shadow-md z-20">
             <div class="flex items-center gap-2">
@@ -215,7 +249,7 @@
         </header>
 
         <!-- Contenedor de Mensajes -->
-        <div id="chatContainer" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNlMmU4ZjAiLz48L3N2Zz4=')]">
+        <div id="chatContainer" class="smooth-mobile-scroll min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 scroll-smooth bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNlMmU4ZjAiLz48L3N2Zz4=')] pb-24 md:pb-6">
             
             <!-- Mensaje Inicial del Agente -->
             <div class="flex items-start gap-4">
@@ -232,7 +266,7 @@
         </div>
 
         <!-- Área de Input -->
-        <div class="border-t border-slate-200 bg-white p-4 sm:p-6 z-10 mobile-safe-bottom">
+        <div class="z-10 border-t border-slate-200 bg-white p-4 sm:p-6 mobile-safe-bottom">
             <div class="mb-4 hidden rounded-xl border border-slate-200 bg-slate-50 p-3 md:block">
                 <div class="flex flex-col gap-4 xl:flex-row xl:flex-wrap xl:items-center">
                     <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</span>
@@ -321,7 +355,12 @@
         const mobileQuickState = document.getElementById('mobileQuickState');
         let lastRequest = null;
 
+        const setBodyInteractionLocked = (locked) => {
+            document.body.classList.toggle('overflow-hidden', locked);
+        };
+
         const openMobileInfo = () => {
+            setBodyInteractionLocked(true);
             mobileInfoOverlay?.classList.remove('hidden');
             mobileInfoPanel?.classList.remove('hidden');
             requestAnimationFrame(() => {
@@ -334,10 +373,12 @@
             setTimeout(() => {
                 mobileInfoOverlay?.classList.add('hidden');
                 mobileInfoPanel?.classList.add('hidden');
+                setBodyInteractionLocked(false);
             }, 250);
         };
 
         const openMobileOptions = () => {
+            setBodyInteractionLocked(true);
             mobileOptionsOverlay?.classList.remove('hidden');
             mobileOptionsPanel?.classList.remove('hidden');
             requestAnimationFrame(() => {
@@ -350,6 +391,7 @@
             setTimeout(() => {
                 mobileOptionsOverlay?.classList.add('hidden');
                 mobileOptionsPanel?.classList.add('hidden');
+                setBodyInteractionLocked(false);
             }, 250);
         };
 
@@ -408,12 +450,12 @@
             };
             const selectedTone = tones[tone] || tones.slate;
             return `
-                <details class="mt-3 overflow-hidden rounded-xl border ${selectedTone.wrapper} open:shadow-sm">
+                <details class="detail-card mt-3 max-w-full overflow-hidden rounded-xl border ${selectedTone.wrapper} open:shadow-sm">
                     <summary class="cursor-pointer list-none px-4 py-3 text-sm font-semibold ${selectedTone.summary} flex items-start justify-between gap-3">
-                        <span class="min-w-0">${title}</span>
+                        <span class="min-w-0 break-words">${title}</span>
                         <span class="text-xs opacity-70">clic para desplegar</span>
                     </summary>
-                    <div class="border-t border-black/5 px-4 py-3 text-sm ${selectedTone.body} overflow-hidden">
+                    <div class="border-t border-black/5 px-4 py-3 text-sm ${selectedTone.body} overflow-hidden break-words">
                         ${innerHtml}
                     </div>
                 </details>
@@ -454,13 +496,69 @@
             const prettyJson = escapeHtml(JSON.stringify(data.extractor_json, null, 2));
             return buildDetailToggle(
                 'Ver JSON obtenido',
-                `<div class="overflow-x-auto"><pre class="m-0 min-w-[260px] rounded-lg bg-slate-900 p-3 text-[11px] sm:text-xs text-slate-100">${prettyJson}</pre></div>`,
+                `<div class="json-viewer max-w-full overflow-hidden"><pre class="m-0 rounded-lg bg-slate-900 p-3 text-[11px] sm:text-xs text-slate-100">${prettyJson}</pre></div>`,
                 'slate'
             );
         };
 
+        const buildExtractorCompactResponse = (data) => {
+            if (!data?.extractor_json) {
+                return `${data?.response || ''}${buildRagDetails(data)}`;
+            }
+
+            const extracted = data.extractor_json;
+            const steps = Array.isArray(extracted.pasos_reparacion)
+                ? extracted.pasos_reparacion
+                : (String(extracted.pasos_reparacion || '')
+                    .split(/(?:\.\s+|;\s+|\n+)/)
+                    .map((step) => step.trim())
+                    .filter(Boolean));
+
+            const summaryRows = [
+                ['Aparato', extracted.aparato || 'No especificado'],
+                ['Sintoma', extracted.sintoma || 'No especificado'],
+                ['Codigo error', extracted.codigo_error || 'No especificado'],
+                ['Peligrosidad', extracted.grado_peligrosidad ?? 'No especificado']
+            ].map(([label, value]) => `
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">${escapeHtml(label)}</div>
+                    <div class="mt-1 text-sm leading-relaxed text-slate-800 break-words">${escapeHtml(value)}</div>
+                </div>
+            `).join('');
+
+            const stepsHtml = steps.length
+                ? `<ul class="ml-5 space-y-2">${steps.slice(0, 5).map((step) => `<li class="break-words">${escapeHtml(step)}</li>`).join('')}</ul>`
+                : `<p class="m-0">No se han extraido pasos de reparacion seguros.</p>`;
+
+            return `
+                <div class="tech-response flex max-w-full flex-col gap-4">
+                    <div>
+                        <div class="text-xs font-bold uppercase tracking-[0.18em] text-atmira-pink">Modo extractor</div>
+                        <h5 class="mt-1 text-xl font-semibold text-slate-900">Diagnostico tecnico estructurado</h5>
+                        <p class="mt-1 text-sm text-slate-600">Vista compacta pensada para revisar la salida tecnica sin romper la interfaz en movil.</p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        ${summaryRows}
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Causa probable</div>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-800 break-words">${escapeHtml(extracted.causa_probable || 'No especificado')}</p>
+                    </div>
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Pasos sugeridos</div>
+                        <div class="mt-2 text-sm leading-relaxed text-slate-800">${stepsHtml}</div>
+                    </div>
+                    ${buildRagDetails(data)}
+                    ${buildExtractorJsonDetails(data)}
+                </div>
+            `;
+        };
+
         const buildResponseHtml = (data) => {
             if (!data?.response) return '';
+            if (data?.mode === 'extractor') {
+                return buildExtractorCompactResponse(data);
+            }
             const details = [
                 buildRagDetails(data),
                 data?.mode === 'assistant' ? buildExtractorJsonDetails(data) : ''
@@ -487,16 +585,16 @@
 
         // Renderizar mensaje del bot
         const appendBotMessage = (htmlContent) => {
-            const isTechnicalResponse = htmlContent.includes('Modo validacion del extractor') || htmlContent.includes('tech-response');
+            const isTechnicalResponse = htmlContent.includes('tech-response');
             const bubbleWidthClass = isTechnicalResponse
-                ? 'w-full max-w-full md:max-w-[88%]'
+                ? 'w-full max-w-full md:max-w-[92%]'
                 : 'w-full max-w-full sm:max-w-[92%] md:max-w-[78%]';
             const msgHTML = `
                 <div class="flex items-start gap-4">
                     <div class="w-10 h-10 rounded-full bg-atmira-pink flex items-center justify-center shadow-lg shadow-atmira-pink/30 flex-shrink-0">
                         <i data-lucide="bot" class="text-white w-6 h-6"></i>
                     </div>
-                    <div class="bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 ${bubbleWidthClass} text-slate-700 leading-relaxed">
+                    <div class="chat-card bg-white p-4 rounded-2xl rounded-tl-none shadow-sm border border-slate-100 ${bubbleWidthClass} text-slate-700 leading-relaxed overflow-hidden">
                         <h4 class="text-xs font-bold text-atmira-pink mb-2">AGENTE DIY (QWEN 2.5)</h4>
                         <div class="${isTechnicalResponse ? 'tech-response' : ''}">${htmlContent}</div>
                     </div>
@@ -565,6 +663,8 @@
             if (showUserBubble) {
                 appendUserMessage(text);
             }
+
+            closeMobileOptions();
 
             userInput.value = '';
             sendBtn.disabled = true;
