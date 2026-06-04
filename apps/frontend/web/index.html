@@ -60,7 +60,7 @@
         }
     </style>
 </head>
-<body class="bg-atmira-light h-screen flex overflow-hidden font-sans text-slate-800">
+<body class="bg-atmira-light min-h-[100dvh] md:h-screen flex overflow-hidden font-sans text-slate-800">
 
     <!-- Sidebar / Panel de Información -->
     <aside class="w-80 bg-atmira-navy text-white flex flex-col shadow-2xl z-10 hidden md:flex transition-all duration-300">
@@ -109,6 +109,43 @@
         </div>
     </aside>
 
+    <div id="mobileInfoOverlay" class="fixed inset-0 z-40 hidden bg-slate-950/45 md:hidden"></div>
+    <aside id="mobileInfoPanel" class="fixed inset-y-0 right-0 z-50 hidden flex w-[88vw] max-w-sm translate-x-full flex-col bg-atmira-navy text-white shadow-2xl transition-transform duration-300 md:hidden">
+        <div class="flex items-center justify-between border-b border-white/10 px-5 py-4">
+            <div>
+                <h2 class="text-lg font-semibold">Información del proyecto</h2>
+                <p class="text-xs uppercase tracking-[0.2em] text-slate-300">Cátedra atmira</p>
+            </div>
+            <button id="closeInfoBtn" class="rounded-lg bg-white/10 p-2 text-white" aria-label="Cerrar información">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+            <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+                <h3 class="mb-2 text-xs font-bold uppercase text-atmira-pink">Proyecto</h3>
+                <p class="text-sm leading-relaxed text-slate-200">
+                    Agente de Mantenimiento Predictivo y Soporte DIY para diagnosticar averías de electrodomésticos con extracción estructurada, RAG y respuestas guiadas.
+                </p>
+            </div>
+            <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+                <h3 class="mb-2 text-xs font-bold uppercase text-atmira-pink">Especificaciones</h3>
+                <ul class="space-y-2 text-sm text-slate-200">
+                    <li><strong>Extractor:</strong> Qwen fusionado</li>
+                    <li><strong>Infra:</strong> servidor local + Ollama</li>
+                    <li><strong>RAG:</strong> Milvus Lite</li>
+                </ul>
+            </div>
+            <div class="rounded-xl border border-white/10 bg-white/5 p-4">
+                <h3 class="mb-2 text-xs font-bold uppercase text-atmira-pink">Equipo</h3>
+                <ul class="space-y-2 text-sm text-slate-200">
+                    <li>Álvaro Ruiz Rivas</li>
+                    <li>Ángel Eduardo Bauste</li>
+                    <li><strong>Tutor:</strong> Ángel Luis Perea</li>
+                </ul>
+            </div>
+        </div>
+    </aside>
+
     <!-- Área Principal de Chat -->
     <main class="flex-1 flex flex-col relative">
         <!-- Header Móvil -->
@@ -143,27 +180,44 @@
         <div class="p-4 sm:p-6 bg-white border-t border-slate-200 z-10">
             
 
-            <div class="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div class="flex flex-wrap items-center gap-4">
-                    <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</span>
-                    <label class="flex items-center gap-2 text-sm text-slate-700">
-                        <input type="radio" name="responseMode" value="assistant" checked>
-                        <span>Modelo conversacional</span>
-                    </label>
-                    <label class="flex items-center gap-2 text-sm text-slate-700">
-                        <input type="radio" name="responseMode" value="extractor">
-                        <span>Modelo extractor</span>
-                    </label>
-                    <div class="h-6 w-px bg-slate-300"></div>
-                    <label class="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm">
-                        <span class="font-medium">Usar RAG</span>
-                        <input id="ragToggle" type="checkbox" class="peer sr-only" checked>
-                        <span class="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500">
-                            <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
-                        </span>
-                    </label>
+            <div class="mb-4 rounded-xl border border-slate-200 bg-slate-50">
+                <button
+                    id="mobileOptionsToggle"
+                    type="button"
+                    class="flex w-full items-center justify-between px-4 py-3 text-left md:hidden"
+                    aria-expanded="false"
+                    aria-controls="queryOptionsContent"
+                >
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Opciones de consulta</div>
+                        <div class="text-sm text-slate-700">Modo, RAG y ajustes de salida</div>
+                    </div>
+                    <i data-lucide="chevron-down" class="w-5 h-5 text-slate-500 transition-transform" data-options-icon></i>
+                </button>
+                <div id="queryOptionsContent" class="hidden border-t border-slate-200 px-4 py-4 md:block md:border-t-0 md:px-3 md:py-3">
+                    <div class="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-center">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Modo de salida</span>
+                        <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                            <label class="flex items-center gap-2 text-sm text-slate-700">
+                                <input type="radio" name="responseMode" value="assistant" checked>
+                                <span>Modelo conversacional</span>
+                            </label>
+                            <label class="flex items-center gap-2 text-sm text-slate-700">
+                                <input type="radio" name="responseMode" value="extractor">
+                                <span>Modelo extractor</span>
+                            </label>
+                        </div>
+                        <div class="hidden h-6 w-px bg-slate-300 md:block"></div>
+                        <label class="inline-flex items-center justify-between gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm sm:w-auto">
+                            <span class="font-medium">Usar RAG</span>
+                            <input id="ragToggle" type="checkbox" class="peer sr-only" checked>
+                            <span class="relative h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-emerald-500">
+                                <span class="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition peer-checked:translate-x-5"></span>
+                            </span>
+                        </label>
+                    </div>
+                    <p class="mt-3 text-[11px] text-slate-500">Por defecto se usa la respuesta conversacional. Puedes apagar el RAG para comparar la respuesta con y sin contexto vectorial.</p>
                 </div>
-                <p class="text-[11px] text-slate-500 mt-2">Por defecto se usa la respuesta conversacional. Puedes apagar el RAG para comparar la respuesta con y sin contexto vectorial.</p>
             </div>
 
             <!-- Sugerencias -->
@@ -179,10 +233,10 @@
                 </button>
             </div>
 
-            <form id="chatForm" class="flex gap-2 relative">
+            <form id="chatForm" class="relative flex gap-2">
                 <input type="text" id="userInput" autocomplete="off" placeholder="Escribe tu problema aquí..." 
-                    class="flex-1 bg-atmira-gray border border-slate-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-atmira-pink focus:border-transparent transition-all">
-                <button type="submit" id="sendBtn" class="bg-atmira-navy hover:bg-atmira-pink text-white px-5 py-3 rounded-xl transition-colors flex items-center justify-center shadow-md disabled:opacity-50">
+                    class="min-w-0 flex-1 bg-atmira-gray border border-slate-300 rounded-xl px-4 py-3 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-atmira-pink focus:border-transparent transition-all">
+                <button type="submit" id="sendBtn" class="shrink-0 bg-atmira-navy hover:bg-atmira-pink text-white px-4 sm:px-5 py-3 rounded-xl transition-colors flex items-center justify-center shadow-md disabled:opacity-50">
                     <i data-lucide="send" class="w-5 h-5"></i>
                 </button>
             </form>
@@ -201,7 +255,38 @@
         const chatContainer = document.getElementById('chatContainer');
         const sendBtn = document.getElementById('sendBtn');
         const ragToggle = document.getElementById('ragToggle');
+        const infoBtn = document.getElementById('infoBtn');
+        const closeInfoBtn = document.getElementById('closeInfoBtn');
+        const mobileInfoPanel = document.getElementById('mobileInfoPanel');
+        const mobileInfoOverlay = document.getElementById('mobileInfoOverlay');
+        const mobileOptionsToggle = document.getElementById('mobileOptionsToggle');
+        const queryOptionsContent = document.getElementById('queryOptionsContent');
+        const optionsIcon = mobileOptionsToggle?.querySelector('[data-options-icon]');
         let lastRequest = null;
+
+        const openMobileInfo = () => {
+            mobileInfoOverlay?.classList.remove('hidden');
+            mobileInfoPanel?.classList.remove('hidden');
+            requestAnimationFrame(() => {
+                mobileInfoPanel?.classList.remove('translate-x-full');
+            });
+        };
+
+        const closeMobileInfo = () => {
+            mobileInfoPanel?.classList.add('translate-x-full');
+            setTimeout(() => {
+                mobileInfoOverlay?.classList.add('hidden');
+                mobileInfoPanel?.classList.add('hidden');
+            }, 250);
+        };
+
+        const toggleMobileOptions = () => {
+            if (!mobileOptionsToggle || !queryOptionsContent) return;
+            const expanded = mobileOptionsToggle.getAttribute('aria-expanded') === 'true';
+            mobileOptionsToggle.setAttribute('aria-expanded', String(!expanded));
+            queryOptionsContent.classList.toggle('hidden', expanded);
+            optionsIcon?.classList.toggle('rotate-180', !expanded);
+        };
 
         // Función auxiliar para rellenar el input desde los botones de sugerencia
         function fillInput(text) {
@@ -231,12 +316,12 @@
             };
             const selectedTone = tones[tone] || tones.slate;
             return `
-                <details class="mt-3 rounded-xl border ${selectedTone.wrapper} open:shadow-sm">
-                    <summary class="cursor-pointer list-none px-4 py-3 text-sm font-semibold ${selectedTone.summary} flex items-center justify-between">
-                        <span>${title}</span>
+                <details class="mt-3 overflow-hidden rounded-xl border ${selectedTone.wrapper} open:shadow-sm">
+                    <summary class="cursor-pointer list-none px-4 py-3 text-sm font-semibold ${selectedTone.summary} flex items-start justify-between gap-3">
+                        <span class="min-w-0">${title}</span>
                         <span class="text-xs opacity-70">clic para desplegar</span>
                     </summary>
-                    <div class="border-t border-black/5 px-4 py-3 text-sm ${selectedTone.body}">
+                    <div class="border-t border-black/5 px-4 py-3 text-sm ${selectedTone.body} overflow-hidden">
                         ${innerHtml}
                     </div>
                 </details>
@@ -277,7 +362,7 @@
             const prettyJson = escapeHtml(JSON.stringify(data.extractor_json, null, 2));
             return buildDetailToggle(
                 'Ver JSON obtenido',
-                `<pre class="m-0 overflow-x-auto rounded-lg bg-slate-900 p-3 text-xs text-slate-100">${prettyJson}</pre>`,
+                `<div class="overflow-x-auto"><pre class="m-0 min-w-[260px] rounded-lg bg-slate-900 p-3 text-[11px] sm:text-xs text-slate-100">${prettyJson}</pre></div>`,
                 'slate'
             );
         };
@@ -424,6 +509,11 @@
         }
 
         window.retryLastQuery = retryLastQuery;
+
+        infoBtn?.addEventListener('click', openMobileInfo);
+        closeInfoBtn?.addEventListener('click', closeMobileInfo);
+        mobileInfoOverlay?.addEventListener('click', closeMobileInfo);
+        mobileOptionsToggle?.addEventListener('click', toggleMobileOptions);
 
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
