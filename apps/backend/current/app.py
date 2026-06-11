@@ -15,8 +15,10 @@ from flask import Flask, jsonify, request
 
 try:
     from pymilvus import MilvusClient
+    from pymilvus.model.dense import SentenceTransformerEmbeddingFunction
 except Exception:
     MilvusClient = None
+    SentenceTransformerEmbeddingFunction = None
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DOMAIN_CATALOG_PATH = REPO_ROOT / "config" / "domain" / "domain_catalog.json"
@@ -175,21 +177,41 @@ def clean_field(value: Any) -> str:
     return text.strip()
 
 
+_embedding_fn = None
+
+def get_embedding_fn() -> Any:
+    global _embedding_fn
+    if _embedding_fn is None:
+        if SentenceTransformerEmbeddingFunction is not None:
+            _embedding_fn = SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2", device="cpu")
+        else:
+            class MockEmbeddingFn:
+                def encode_queries(self, queries):
+                    return [[0.0] * 384 for _ in queries]
+            _embedding_fn = MockEmbeddingFn()
+    return _embedding_fn
+
+
 def hash_embedding(text: str, dim: int = 384) -> list[float]:
-    tokens = TOKEN_PATTERN.findall(norm(text))
-    vector = [0.0] * dim
-    if not tokens:
-        return vector
-    for token in tokens:
-        digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
-        number = int.from_bytes(digest, byteorder="little", signed=False)
-        index = number % dim
-        sign = -1.0 if number & 1 else 1.0
-        vector[index] += sign
-    length = math.sqrt(sum(v * v for v in vector))
-    if not length:
-        return vector
-    return [v / length for v in vector]
+    try:
+        fn = get_embedding_fn()
+        return fn.encode_queries([text])[0].tolist()
+    except Exception:
+        tokens = TOKEN_PATTERN.findall(norm(text))
+        vector = [0.0] * dim
+        if not tokens:
+            return vector
+        for token in tokens:
+            digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+            number = int.from_bytes(digest, byteorder="little", signed=False)
+            index = number % dim
+            sign = -1.0 if number & 1 else 1.0
+            vector[index] += sign
+        length = math.sqrt(sum(v * v for v in vector))
+        if not length:
+            return vector
+        return [v / length for v in vector]
+
 
 
 def inicializar_milvus() -> None:
@@ -266,10 +288,11 @@ def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k:
         hits: list[dict[str, Any]] = []
         for hit in raw_results[0]:
             entity = hit.get("entity", hit)
+            aparato_original = entity.get("aparato", "")
             hits.append(
                 {
                     "score": round(float(hit.get("distance", 0.0)), 4),
-                    "aparato": entity.get("aparato", ""),
+                    "aparato": aparato_original,
                     "causa_probable": entity.get("causa_probable", ""),
                     "codigo_error": entity.get("codigo_error", ""),
                     "pasos_reparacion": entity.get("pasos_reparacion", ""),
@@ -284,14 +307,15 @@ def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k:
         return []
 
 
-def construir_contexto_rag(hits: list[dict[str, Any]]) -> str:
+def construir_contexto_rag(hits: list[dict[str, Any]], user_message: str) -> str:
     if not hits:
         return ""
     bloques = []
     for index, hit in enumerate(hits, 1):
+        aparato_para_prompt = sanitize_appliance_name(hit.get('aparato', ''), user_message)
         bloques.append(
             f"[CASO RECUPERADO {index}]\n"
-            f"Aparato: {hit.get('aparato', 'No especificado')}\n"
+            f"Aparato: {aparato_para_prompt}\n"
             f"Causa probable: {hit.get('causa_probable', 'No especificado')}\n"
             f"Codigo de error: {hit.get('codigo_error', 'No especificado')}\n"
             f"Pasos de reparacion: {hit.get('pasos_reparacion', 'No especificado')}\n"
@@ -463,6 +487,33 @@ def detect_brand(user_message: str, extracted: dict[str, Any]) -> str | None:
         if brand in lowered:
             return brand.capitalize()
     return None
+
+
+def detect_user_brand(user_message: str) -> str | None:
+    lowered = user_message.lower()
+    for brand in BRAND_KEYWORDS:
+        if brand in lowered:
+            return brand.capitalize()
+    return None
+
+
+def sanitize_appliance_name(appliance_name: str, user_message: str) -> str:
+    category = detect_device_category(appliance_name, user_message)
+    category_map = {
+        "microwave": "Microondas",
+        "washing_machine": "Lavadora",
+        "refrigerator": "Frigorífico",
+        "dishwasher": "Lavavajillas",
+        "oven": "Horno",
+        "dryer": "Secadora"
+    }
+    clean_name = category_map.get(category, "Electrodoméstico") if category else "Electrodoméstico"
+    
+    user_brand = detect_user_brand(user_message)
+    if user_brand:
+        return f"{clean_name} {user_brand}"
+    return clean_name
+
 
 
 def assess_extraction_consistency(user_message: str, extracted: dict[str, Any]) -> list[str]:
@@ -644,43 +695,17 @@ def build_structured_assistant_response(user_message: str, extracted: dict[str, 
     return append_follow_up_question(" ".join(parts), language)
 
 
-def build_rag_supported_fallback(user_message: str, rag_hits: list[dict[str, Any]]) -> str:
+def build_generic_fallback(user_message: str) -> str:
     language = detect_output_language(user_message)
-    if not rag_hits:
-        if language == "English":
-            return append_follow_up_question(
-                "I could not extract a reliable diagnosis from the model and I do not have enough supporting context to answer safely. The most sensible option is to contact the brand's official technical support.",
-                language,
-            )
+    if language == "English":
         return append_follow_up_question(
-            "No he podido extraer un diagnostico fiable del modelo y tampoco tengo contexto suficiente para responder con seguridad. Lo mas recomendable es contactar con el soporte tecnico oficial de la marca.",
+            "I could not extract a reliable diagnosis for this issue. The safest option is to avoid further manipulation and contact the brand's official technical support.",
             language,
         )
-
-    top_hit = rag_hits[0]
-    aparato = clean_field(top_hit.get("aparato")) or "el electrodomestico"
-    causa = clean_field(top_hit.get("causa_probable")) or "No especificado"
-    pasos = normalize_steps(top_hit.get("pasos_reparacion"))
-    if language == "English":
-        parts = [
-            f"I could not validate the extractor output cleanly, but I did recover a similar case related to {aparato}.",
-            f"The closest likely cause in the knowledge base is: {causa}.",
-        ]
-        if pasos:
-            joined_steps = " ".join(f"{index + 1}. {step}." for index, step in enumerate(pasos[:3]))
-            parts.append(f"Conservative next steps: {joined_steps}")
-        parts.append("If the symptoms do not match your appliance exactly, avoid forcing a repair and contact the brand's official technical support.")
-        return append_follow_up_question(" ".join(parts), language)
-
-    parts = [
-        f"No he podido validar del todo la salida del extractor, pero si he recuperado un caso parecido relacionado con {aparato}.",
-        f"La causa mas cercana encontrada en la base es: {causa}.",
-    ]
-    if pasos:
-        joined_steps = " ".join(f"{index + 1}. {step}." for index, step in enumerate(pasos[:3]))
-        parts.append(f"Como orientacion prudente, los pasos sugeridos serian: {joined_steps}")
-    parts.append("Si los sintomas no encajan bien con tu equipo, evita forzar la reparacion y contacta con el soporte tecnico oficial de la marca.")
-    return append_follow_up_question(" ".join(parts), language)
+    return append_follow_up_question(
+        "No he podido extraer un diagnóstico fiable para este caso. Lo más prudente es no manipular el equipo y contactar directamente con el soporte técnico oficial de la marca.",
+        language,
+    )
 
 
 def build_grounded_assistant_response(
@@ -885,7 +910,7 @@ def chat() -> tuple[Any, int] | Any:
 
     aparato_hint = detect_device_category(message)
     rag_hits = buscar_fragmentos_rag(message, aparato_hint=aparato_hint, top_k=RAG_TOP_K) if use_rag else []
-    contexto_rag = construir_contexto_rag(rag_hits)
+    contexto_rag = construir_contexto_rag(rag_hits, message)
 
     try:
         raw_response = call_ollama_generate(
@@ -899,20 +924,23 @@ def chat() -> tuple[Any, int] | Any:
     json_text = extract_first_json(raw_response)
     extracted = validate_extraction_json(json_text)
 
+    if extracted is not None:
+        extracted["aparato"] = sanitize_appliance_name(extracted.get("aparato", ""), message)
+
     if extracted is None:
         if mode == "assistant":
-            assistant_text = build_rag_supported_fallback(message, rag_hits)
+            assistant_text = build_generic_fallback(message)
             response_html = (
                 f"<div>{html.escape(assistant_text).replace(chr(10), '<br>')}</div>"
             )
-            return jsonify({"response": response_html, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits, "use_rag": use_rag})
+            return jsonify({"response": response_html, "mode": mode, "rag_used": False, "rag_hits": [], "use_rag": use_rag})
 
         fallback = (
             "<strong>El extractor no devolvio un JSON valido.</strong><br>"
             "Salida bruta del modelo para diagnostico:<br><br>"
             f"<pre>{html.escape(raw_response)}</pre>"
         )
-        return jsonify({"response": fallback, "mode": mode, "rag_used": bool(rag_hits), "rag_hits": rag_hits, "use_rag": use_rag})
+        return jsonify({"response": fallback, "mode": mode, "rag_used": False, "rag_hits": [], "use_rag": use_rag})
 
     issues = assess_extraction_consistency(message, extracted)
 

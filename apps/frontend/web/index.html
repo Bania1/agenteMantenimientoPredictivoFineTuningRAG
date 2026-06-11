@@ -95,6 +95,31 @@
             overflow-wrap: anywhere;
             max-width: 100%;
         }
+        .assistant-steps {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+        .assistant-steps li {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            align-items: start;
+            gap: 0.75rem;
+            overflow-wrap: anywhere;
+        }
+        .assistant-step-index {
+            min-width: 1.6rem;
+            font-weight: 700;
+            color: #4338ca;
+            line-height: 1.65;
+        }
+        .assistant-step-text {
+            line-height: 1.65;
+            overflow-wrap: anywhere;
+        }
         .mobile-safe-bottom {
             padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
         }
@@ -306,16 +331,16 @@
                 </div>
             </div>
 
-            <!-- Sugerencias -->
+            <!-- Sugerencias para Presentación -->
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="fillInput('El microondas enciende pero no calienta la comida')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
-                    🔥 Microondas no calienta
+                <button onclick="fillInput('Mi lavadora Bosch se para a mitad del lavado, no centrifuga y me sale el error F21 en la pantalla')" title="Demuestra extracción perfecta con código de error" class="text-xs bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 px-3 py-1.5 rounded-full transition-colors border border-emerald-200 font-medium shadow-sm">
+                    🌟 Caso Perfecto (Bosch F21)
                 </button>
-                <button onclick="fillInput('Mi microondas funciona pero la comida sale fria')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
-                    🍽️ Comida sale fria
+                <button onclick="fillInput('El microondas enciende pero no calienta la comida')" title="Demuestra deducción semántica RAG sin marca específica" class="text-xs bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-700 px-3 py-1.5 rounded-full transition-colors border border-blue-200 font-medium shadow-sm">
+                    👍 Caso Bueno (Microondas genérico)
                 </button>
-                <button onclick="fillInput('El microondas Beko hace ruido pero no calienta')" class="text-xs bg-atmira-gray hover:bg-atmira-pink hover:text-white text-slate-600 px-3 py-1.5 rounded-full transition-colors border border-slate-200">
-                    ⚙️ Beko hace ruido
+                <button onclick="fillInput('Mi coche híbrido no arranca por las mañanas y el motor hace un ruido metálico')" title="Demuestra la red de seguridad y control de alucinaciones" class="text-xs bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-700 px-3 py-1.5 rounded-full transition-colors border border-rose-200 font-medium shadow-sm">
+                    🛡️ Fuera de Dominio (Coche Híbrido)
                 </button>
             </div>
 
@@ -501,6 +526,115 @@
             );
         };
 
+        const looksEnglish = (text) => {
+            const sample = String(text ?? '').toLowerCase();
+            return sample.includes('do you need help with anything else')
+                || sample.includes('suggested next steps')
+                || sample.includes('likely cause')
+                || sample.includes('official technical support');
+        };
+
+        const normalizeAssistantSteps = (steps) => {
+            if (Array.isArray(steps)) {
+                return steps
+                    .map((step) => String(step ?? '').trim())
+                    .filter(Boolean);
+            }
+
+            const raw = String(steps ?? '').trim();
+            if (!raw) return [];
+
+            return raw
+                .split(/(?:\n+|\r+|;\s+|\.\s+(?=[A-ZÁÉÍÓÚÑ0-9]))/)
+                .map((step) => step.replace(/^\d+[\).\s-]+/, '').trim())
+                .filter(Boolean);
+        };
+
+        const buildAssistantStructuredResponse = (data) => {
+            const extracted = data?.extractor_json;
+            if (!extracted) return data?.response || '';
+
+            const english = looksEnglish(data?.response);
+            const appliance = escapeHtml(extracted.aparato || (english ? 'the appliance' : 'el electrodomestico'));
+            const symptom = escapeHtml(extracted.sintoma || (english ? 'the reported issue' : 'el problema descrito'));
+            const cause = escapeHtml(extracted.causa_probable || (english ? 'Not specified' : 'No especificado'));
+            const errorCode = escapeHtml(extracted.codigo_error || (english ? 'Not specified' : 'No especificado'));
+            const severity = Number(extracted.grado_peligrosidad);
+            const steps = normalizeAssistantSteps(extracted.pasos_reparacion).slice(0, 5);
+
+            const summaryText = english
+                ? `I detected an issue affecting <strong>${appliance}</strong>: ${symptom}.`
+                : `He detectado un problema en <strong>${appliance}</strong>: ${symptom}.`;
+
+            const errorText = errorCode && errorCode !== 'No especificado' && errorCode !== 'Not specified'
+                ? (english
+                    ? `<p class="m-0 text-sm leading-relaxed text-slate-700">The extracted error code is <strong>${errorCode}</strong>.</p>`
+                    : `<p class="m-0 text-sm leading-relaxed text-slate-700">El codigo extraido es <strong>${errorCode}</strong>.</p>`)
+                : '';
+
+            const stepsHtml = steps.length
+                ? `<ol class="assistant-steps">${steps.map((step, index) => `
+                    <li>
+                        <span class="assistant-step-index">${index + 1}.</span>
+                        <span class="assistant-step-text">${escapeHtml(step)}</span>
+                    </li>
+                `).join('')}</ol>`
+                : `<p class="m-0 text-sm leading-relaxed text-slate-700">${english
+                    ? 'I do not have enough safe repair steps to recommend a reliable intervention.'
+                    : 'No tengo pasos de reparacion suficientemente fiables como para recomendar una intervencion con seguridad.'
+                }</p>`;
+
+            const recommendation = severity === 1
+                ? (english
+                    ? "This looks critical. Stop handling the appliance and contact the brand's official technical support as soon as possible."
+                    : 'Este caso parece critico. Deja de manipular el aparato y contacta cuanto antes con el soporte tecnico oficial de la marca.')
+                : (english
+                    ? "If the symptoms do not match what you observe or the fault persists, the safest option is to contact the brand's official technical support."
+                    : 'Si los sintomas no encajan bien con lo que ves en tu equipo o el fallo persiste, lo mas recomendable es contactar con el soporte tecnico oficial de la marca.');
+
+            const nextStep = english
+                ? 'Do you need help with anything else?'
+                : '¿Necesitas que te ayude con algo mas?';
+
+            const criticalBanner = severity === 1
+                ? `
+                    <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-relaxed text-rose-800 shadow-sm">
+                        <strong>${english ? 'Critical safety warning:' : 'Aviso de seguridad critico:'}</strong>
+                        ${english
+                            ? ' do not continue manipulating the appliance and speak with official technical support.'
+                            : ' no se recomienda seguir manipulando el aparato y conviene hablar con el soporte tecnico oficial.'}
+                    </div>
+                `
+                : '';
+
+            return `
+                <div class="tech-response flex max-w-full flex-col gap-4">
+                    ${criticalBanner}
+                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Case summary' : 'Resumen del caso'}</div>
+                        <p class="mt-3 text-sm leading-relaxed text-slate-800">${summaryText}</p>
+                        ${errorText ? `<div class="mt-3">${errorText}</div>` : ''}
+                    </section>
+                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Likely cause' : 'Causa probable'}</div>
+                        <p class="mt-3 text-base leading-relaxed text-slate-900">${cause}</p>
+                    </section>
+                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Suggested steps' : 'Pasos sugeridos'}</div>
+                        <div class="mt-3 text-slate-800">${stepsHtml}</div>
+                    </section>
+                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Recommendation' : 'Recomendacion'}</div>
+                        <p class="mt-3 text-sm leading-relaxed text-slate-800">${recommendation}</p>
+                    </section>
+                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Next step' : 'Siguiente paso'}</div>
+                        <p class="mt-3 text-sm leading-relaxed text-slate-800">${nextStep}</p>
+                    </section>
+                </div>
+            `;
+        };
+
         const buildExtractorCompactResponse = (data) => {
             if (!data?.extractor_json) {
                 return `${data?.response || ''}${buildRagDetails(data)}`;
@@ -529,11 +663,14 @@
             if (data?.mode === 'extractor') {
                 return buildExtractorCompactResponse(data);
             }
+            const assistantHtml = data?.mode === 'assistant'
+                ? buildAssistantStructuredResponse(data)
+                : data.response;
             const details = [
                 buildRagDetails(data),
                 data?.mode === 'assistant' ? buildExtractorJsonDetails(data) : ''
             ].filter(Boolean).join('');
-            return `${data.response}${details}`;
+            return `${assistantHtml}${details}`;
         };
 
         // Renderizar mensaje del usuario

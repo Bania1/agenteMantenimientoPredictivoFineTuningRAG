@@ -1,0 +1,542 @@
+[
+    {
+        "aparato": "Microondas Beko MOC 20100",
+        "codigo_error": "No especificado",
+        "sintoma": "No calienta los alimentos pero el plato gira y la luz enciende",
+        "causa_probable": "Diodo de alta tension en cortocircuito o magnetron defectuoso",
+        "pasos_reparacion": "Desconectar el aparato de la red. Descargar el condensador de alta tension usando un destornillador aislado. Medir continuidad del diodo y sustituirlo si esta en cortocircuito. Si el diodo esta bien, comprobar el filamento del magnetron.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Microondas Bosch BFL523MS0",
+        "codigo_error": "No especificado",
+        "sintoma": "Produce chispas y ruidos de arco electrico en el interior al calentar",
+        "causa_probable": "Placa protectora de mica quemada o acumulacion de grasa carbonizada en la guia de ondas",
+        "pasos_reparacion": "Limpiar a fondo la cavidad interna con desengrasante. Retirar la placa de mica dañada. Lijar suavemente si hay pintura saltada y aplicar laca termoelectrica. Colocar una placa de mica nueva.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Microondas Balay 3CG5172B0",
+        "codigo_error": "No especificado",
+        "sintoma": "El plato giratorio no gira pero calienta correctamente",
+        "causa_probable": "Motor sincrono del plato quemado o engranaje de arrastre de plastico roto",
+        "pasos_reparacion": "Desmontar la tapa inferior del microondas. Desconectar los terminales del motor de giro. Medir resistencia de la bobina. Sustituir el motor de arrastre averiado por uno nuevo de iguales caracteristicas.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Microondas Samsung GE83X",
+        "codigo_error": "No especificado",
+        "sintoma": "No enciende ninguna luz, el panel esta apagado y no responde",
+        "causa_probable": "Fusible principal de entrada fundido debido a fallo de los microinterruptores de la puerta",
+        "pasos_reparacion": "Desconectar de la red electrica. Retirar la carcasa externa. Comprobar continuidad del fusible principal de 8A/10A. Comprobar los tres microinterruptores de cierre de puerta con multimetro. Cambiar interruptor defectuoso y reponer fusible.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Microondas LG MH6535GDH",
+        "codigo_error": "No especificado",
+        "sintoma": "Hace un zumbido muy fuerte al pulsar inicio y no calienta nada",
+        "causa_probable": "Condensador de alta tension cruzado o transformador con espiras en cortocircuito",
+        "pasos_reparacion": "Desconectar de la corriente. Descargar con seguridad el condensador de alta tension. Medir la capacitancia del condensador. Medir bobinados del transformador. Sustituir el componente defectuoso.",
+        "porcentaje_certeza": 75,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Microondas Teka MWE 225 FI",
+        "codigo_error": "No especificado",
+        "sintoma": "La pantalla digital parpadea continuamente y no permite seleccionar funciones",
+        "causa_probable": "Fallo en la fuente de alimentacion capacitiva de la placa electronica de control",
+        "pasos_reparacion": "Desmontar panel de control frontal. Inspeccionar condensadores electroliticos de la fuente en la placa. Buscar condensadores hinchados. Sustituir condensadores defectuosos de 1000uF/25V o cambiar placa de control entera.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Microondas Whirlpool AMW 4910/IX",
+        "codigo_error": "No especificado",
+        "sintoma": "El ventilador de refrigeracion interna funciona constantemente pero no calienta",
+        "causa_probable": "Rele de potencia de la placa electronica pegado o fallo en el sensor de temperatura",
+        "pasos_reparacion": "Desconectar el equipo. Acceder a la placa electronica principal. Comprobar los contactos del rele de alta tension con multimetro. Despegar o sustituir rele defectuoso en la placa de circuito impreso.",
+        "porcentaje_certeza": 70,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Microondas Electrolux LMS2203EMX",
+        "codigo_error": "No especificado",
+        "sintoma": "Huele a quemado y sale un poco de humo de la parte trasera al encender",
+        "causa_probable": "Transformador de alta tension dañado por sobrecalentamiento extremo",
+        "pasos_reparacion": "Desconectar de inmediato. Retirar cubierta. Buscar marcas de quemaduras o deformacion en el bobinado del transformador de alta tension. Sustituir transformador de potencia por recambio oficial compatible.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Microondas AEG MBE2658SEM",
+        "codigo_error": "No especificado",
+        "sintoma": "La puerta cierra mal y hay fuga de microondas detectada",
+        "causa_probable": "Bisagras deformadas por golpe o ganchos de cierre desgastados",
+        "pasos_reparacion": "Ajustar la posicion de las bisagras de la puerta. Sustituir los pestillos elasticos de cierre si estan desgastados. Verificar el correcto encaje mecanico y realizar prueba de hermeticidad con detector de fugas RF.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Microondas Beko MGB 25333 BG",
+        "codigo_error": "No especificado",
+        "sintoma": "El grill superior enciende pero no calienta en modo microondas normal",
+        "causa_probable": "Magnetron agotado o filamento interno cortado",
+        "pasos_reparacion": "Desconectar y retirar tapa superior. Descargar condensador. Medir resistencia en bornes del magnetron (debe ser menor a 1 ohmio). Medir aislamiento a chapa. Si da circuito abierto entre bornes, sustituir magnetron.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Lavadora Bosch WUQ28478ES",
+        "codigo_error": "F21",
+        "sintoma": "No gira el tambor y muestra codigo de error F21 en la pantalla",
+        "causa_probable": "Escobillas de carbon del motor electrico desgastadas por uso prolongado",
+        "pasos_reparacion": "Desconectar lavadora. Retirar tapa trasera. Quitar la correa de transmision. Desmontar el motor de su soporte. Extraer las escobillas de carbon. Si miden menos de 1 cm, sustituirlas por unas nuevas de repuesto. Limpiar colector.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Lavadora Samsung WW90T534DTW",
+        "codigo_error": "5C",
+        "sintoma": "La lavadora no evacua el agua despues del lavado y muestra error 5C",
+        "causa_probable": "Filtro de la bomba de desague obstruido o bomba de evacuacion rota",
+        "pasos_reparacion": "Abrir la tapa de registro abajo a la derecha. Colocar un recipiente y vaciar el agua por el tubo auxiliar. Desenroscar el tapon del filtro. Retirar monedas, pelusas u otros objetos. Comprobar que las aspas de la bomba giran con libertad.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavadora Balay 3TS976B",
+        "codigo_error": "E17",
+        "sintoma": "No entra agua al tambor y pita mostrando el error E17 al iniciar",
+        "causa_probable": "Filtro de la manguera de entrada de agua obstruido o electrovalvula defectuosa",
+        "pasos_reparacion": "Cerrar el grifo de agua exterior. Desenroscar la manguera de alimentacion de la parte trasera de la lavadora. Extraer el filtro de malla pequeño y limpiarlo con un cepillo. Comprobar la electrovalvula con multimetro, cambiar si no da continuidad.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavadora LG F4WV3009S3W",
+        "codigo_error": "dE",
+        "sintoma": "No inicia el ciclo y muestra error dE indicando puerta abierta",
+        "causa_probable": "Blocapuertas (cierre de seguridad electrico) dañado o contactos sucios",
+        "pasos_reparacion": "Desconectar corriente. Retirar el aro de alambre que sujeta la junta de goma de la puerta. Retirar junta parcialmente. Desatornillar el dispositivo blocapuertas. Desconectar y conectar el nuevo interruptor de bloqueo. Montar de nuevo.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavadora Beko WTA 8612 XSWR",
+        "codigo_error": "No especificado",
+        "sintoma": "Hace un ruido metalico insoportable y vibra mucho al centrifugar",
+        "causa_probable": "Rodamientos del tambor desgastados o cruz de soporte del tambor rota",
+        "pasos_reparacion": "Girar el tambor con la mano: si tiene holgura vertical o hace ruido de rozamiento, los rodamientos estan rotos. Se requiere desmontar la cuba por completo, extraer el reten de agua y los dos rodamientos de bolas, y sustituirlos.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Lavadora Siemens WM14N26XES",
+        "codigo_error": "E18",
+        "sintoma": "No finaliza el centrifugado y muestra error E18",
+        "causa_probable": "Bomba de desague quemada internamente o tuberia de desague aplastada",
+        "pasos_reparacion": "Revisar que la manguera de desague trasera no este doblada. Acceder a la bomba de vaciado quitando el zocalo frontal. Comprobar tension en la bomba. Sustituir bomba de desague por recambio original.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Lavadora Zanussi ZWF824C5S",
+        "codigo_error": "E30",
+        "sintoma": "Desbordamiento de agua, se llena de agua constantemente",
+        "causa_probable": "Presostato averiado o tubo de presion (camara de presion) taponado por restos de jabon",
+        "pasos_reparacion": "Desconectar lavadora. Acceder al presostato en la parte superior trasera. Desconectar el tubito transparente y soplar por el. Limpiar la camara de presion inferior si esta obstruida. Sustituir presostato si persiste el fallo.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Lavadora Electrolux EW6F4823BB",
+        "codigo_error": "E60",
+        "sintoma": "El agua no se calienta durante los ciclos de lavado templado",
+        "causa_probable": "Resistencia de calentamiento interrumpida o sonda NTC defectuosa",
+        "pasos_reparacion": "Desconectar equipo. Acceder a la resistencia por la tapa trasera o frontal inferior. Medir resistencia en bornes con multimetro (debe marcar aprox 25-30 ohmios). Si marca circuito abierto, sustituir resistencia y junta.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Lavadora Whirlpool FFB 8448 BV SP",
+        "codigo_error": "F08",
+        "sintoma": "El lavado se interrumpe y se enciende el testigo de error F08",
+        "causa_probable": "Fallo en el circuito calefactor, derivacion a tierra de la resistencia",
+        "pasos_reparacion": "Desconectar corriente. Comprobar aislamiento de la resistencia a tierra con el multimetro en la escala mas alta de megaohmios. Si existe derivacion, cambiar la resistencia calefactora de inmediato para evitar cortocircuitos.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Lavadora AEG L6FBI824U",
+        "codigo_error": "No especificado",
+        "sintoma": "La lavadora da pequeños calambres al tocar la carcasa metalica",
+        "causa_probable": "Falta de toma de tierra en el enchufe de la vivienda o derivacion interna leve",
+        "pasos_reparacion": "Desconectar inmediatamente. Verificar el estado de la toma de tierra del enchufe de pared. Inspeccionar cableado interno buscando cables pelados en contacto con el chasis. Medir aislamiento del motor y resistencia.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Nevera Samsung RB34T602ESA",
+        "codigo_error": "No especificado",
+        "sintoma": "No enfria en el compartimento inferior pero si congela arriba en el congelador",
+        "causa_probable": "Acumulacion de hielo que bloquea el conducto de aire (damper) por fallo de desescarche",
+        "pasos_reparacion": "Desconectar el aparato por completo durante 24 horas manteniendo las puertas abiertas para deshielo manual. Comprobar la resistencia de desescarche y el fusible termico en el evaporador. Sustituir si estan cortados.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Nevera Bosch KGN39XW37",
+        "codigo_error": "No especificado",
+        "sintoma": "La nevera no funciona, la luz interna parpadea y hace un clic continuo atras",
+        "causa_probable": "Rele PTC de arranque del compresor dañado o condensador de arranque defectuoso",
+        "pasos_reparacion": "Desconectar de la red electrica. Desmontar la caja protectora negra del compresor. Extraer el rele PTC. Si al agitarlo suena como arena suelta por dentro, esta roto. Sustituir por un protector y PTC compatibles.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Nevera LG GBB72MCDFN",
+        "codigo_error": "No especificado",
+        "sintoma": "Se acumula agua en el suelo bajo los cajones de la verdura",
+        "causa_probable": "Conducto de desague de condensados obstruido por suciedad o hielo",
+        "pasos_reparacion": "Retirar los cajones de verduras inferiores. Localizar el canal de desague en el panel trasero. Con una jeringuilla con agua caliente y un cable flexible flexible, desatascar el orificio hasta que el agua fluya libremente a la bandeja del motor.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 5
+    },
+    {
+        "aparato": "Nevera Beko RCNE366E30ZXB",
+        "codigo_error": "No especificado",
+        "sintoma": "Hace un ruido de roce de aspas metalico que para al abrir la puerta del congelador",
+        "causa_probable": "El ventilador del evaporador choca con la escarcha acumulada en la zona del congelador",
+        "pasos_reparacion": "Desconectar de la red. Quitar panel del fondo del congelador. Usar secador de pelo para derretir el hielo que rodea las aspas del ventilador. Revisar que el ventilador no este descentrado y gire suavemente.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Nevera Siemens KG39NXI4A",
+        "codigo_error": "E10",
+        "sintoma": "Muestra error E10 en el display y sube la temperatura del refrigerador",
+        "causa_probable": "Sonda de temperatura (sensor NTC) de ambiente del refrigerador estropeada",
+        "pasos_reparacion": "Desconectar aparato. Localizar la sonda de temperatura que suele estar empotrada en el lateral interior. Cortar cables y empalmar sonda NTC nueva usando manguitos aislantes. Probar lectura del display.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Nevera Liebherr CN 4313",
+        "codigo_error": "No especificado",
+        "sintoma": "El motor compresor funciona sin parar y la nevera no enfria casi nada",
+        "causa_probable": "Fuga de gas refrigerante R600a en el circuito sellado o falta de rendimiento del motor",
+        "pasos_reparacion": "Inspeccionar las tuberias traseras buscando manchas de aceite lubricante (indican fuga). Se requiere un tecnico cualificado para soldar valvula de servicio, hacer vacio y recargar gas refrigerante.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Nevera Teka NFL 345 C",
+        "codigo_error": "No especificado",
+        "sintoma": "Congela los alimentos en la zona del frigorifico inferior",
+        "causa_probable": "Damper termostatico (trampilla de aire) atascado en posicion abierta o sonda rota",
+        "pasos_reparacion": "Acceder al conducto de union de aire entre congelador y nevera. Desmontar el modulo del damper electrico. Probar movimiento motorizado del damper. Si esta roto en posicion permanentemente abierta, sustituir damper.",
+        "porcentaje_certeza": 75,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Nevera Whirlpool W7921IOX",
+        "codigo_error": "AL02",
+        "sintoma": "Suena la alarma acustica constantemente y muestra error AL02",
+        "causa_probable": "Fallo en el ventilador de refrigeracion del condensador trasero o placa de control",
+        "pasos_reparacion": "Limpiar polvo de la rejilla trasera del condensador. Medir continuidad del ventilador axial inferior situado junto al compresor. Sustituir ventilador si su bobinado esta abierto.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Nevera Balay 3KFE561WI",
+        "codigo_error": "No especificado",
+        "sintoma": "La puerta no cierra sola y se escapa el frio por las juntas de goma",
+        "causa_probable": "Burlete de goma magnetico deformado o endurecido por suciedad",
+        "pasos_reparacion": "Limpiar la junta de goma con agua tibia y jabon neutro. Aplicar calor suave con secador de pelo a las zonas deformadas del burlete para que recupere la elasticidad. Sustituir junta si tiene grietas o roturas.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 5
+    },
+    {
+        "aparato": "Nevera Indesit I31T111X",
+        "codigo_error": "No especificado",
+        "sintoma": "Olor a quemado electrico y chispas ligeras saliendo de la caja de control trasera",
+        "causa_probable": "Cortocircuito en el modulo del condensador o cables quemados por contacto con el compresor caliente",
+        "pasos_reparacion": "Desconectar de inmediato. Retirar caja del cableado. Reemplazar cableado derretido. Comprobar que no haya fugas de corriente a chasis y asegurar cable de tierra.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Lavavajillas Balay 3VS572IP",
+        "codigo_error": "E15",
+        "sintoma": "Se enciende el error E15 y la bomba de vaciado funciona constantemente sin parar",
+        "causa_probable": "Fuga de agua interna hacia la bandeja inferior de seguridad (antidesbordamiento)",
+        "pasos_reparacion": "Desconectar el lavavajillas. Inclinar el aparato hacia atras unos 45 grados para evacuar el agua retenida en la bandeja inferior. Retirar paneles laterales y localizar el origen de la fuga (junta de la cuba, bomba de desague, mangueras). Reparar fuga.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavavajillas Bosch SMS25AI05E",
+        "codigo_error": "E09",
+        "sintoma": "Completa el programa de lavado pero saca la vajilla totalmente fria y mojada con error E09",
+        "causa_probable": "Resistencia de calentar agua (bomba de calor de circulacion) fundida",
+        "pasos_reparacion": "Desconectar corriente. Volcar lavavajillas boca abajo. Quitar chapa inferior de base. Identificar la bomba de calor. Desconectar bornes de la resistencia y medir resistencia (debe dar aprox 20 ohmios). Si da infinito, cambiar bomba de calor entera.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Lavavajillas Siemens SN23EC14CE",
+        "codigo_error": "E19",
+        "sintoma": "Pita, no coge agua y sale codigo de error E19 al poco de empezar",
+        "causa_probable": "Electrovalvula del dispensador o valvula de vaciado del intercambiador de calor defectuosa",
+        "pasos_reparacion": "Desconectar de la red electrica. Quitar panel lateral izquierdo. Identificar la valvula de vaciado del descalcificador (parte inferior izquierda). Medir continuidad. Sustituir electrovalvula rota por repuesto de iguales ohmios.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavavajillas Beko DFN05321W",
+        "codigo_error": "No especificado",
+        "sintoma": "Los platos quedan sucios por arriba y la pastilla de detergente no se disuelve",
+        "causa_probable": "Orificios del brazo aspersor giratorio obstruidos por restos de comida y cal",
+        "pasos_reparacion": "Desenroscar el brazo aspersor superior e inferior. Limpiarlos debajo de un grifo de agua a presion usando un palillo para desatascar las boquillas de plastico. Comprobar que giran libremente.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 5
+    },
+    {
+        "aparato": "Lavavajillas Teka DFS 46750 SS",
+        "codigo_error": "E1",
+        "sintoma": "Muestra error E1 y no inicia despues de desaguar el ciclo inicial",
+        "causa_probable": "Falta de suministro de agua, aquastop cerrado o electrovalvula rota",
+        "pasos_reparacion": "Comprobar presion en el grifo de entrada. Probar continuidad de la valvula aquastop integrada en la manguera de entrada de agua. Si no le llega tension o no abre, sustituir la manguera de entrada aquastop.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Lavavajillas Indesit DFE 1B19 X",
+        "codigo_error": "No especificado",
+        "sintoma": "El agua no drena del fondo de la cuba al acabar el programa",
+        "causa_probable": "Bomba de desague bloqueada por restos de comida (cristal, pepitas, plastico)",
+        "pasos_reparacion": "Extraer filtros del fondo de la cuba. Retirar agua con una esponja. Retirar una tapa pequeña de plastico del alojamiento de la hélice de la bomba. Limpiar cuerpos extraños que impiden girar a la helice. Probar desagote.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavavajillas LG DF325FP",
+        "codigo_error": "OE",
+        "sintoma": "Muestra codigo OE y se queda parado pidiendo desague",
+        "causa_probable": "Manguera de desague obstruida o bomba de evacuacion rota electricamente",
+        "pasos_reparacion": "Comprobar si el desague de la pared o sifon del fregadero estan atascados. Si estan bien, tumbar lavavajillas, desmontar bomba de desague y medir continuidad en la bobina del motor de desague. Sustituir bomba.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Lavavajillas Whirlpool WFC 3C26 FX",
+        "codigo_error": "F8",
+        "sintoma": "El lavavajillas pita y parpadea con fallo F8 indicando nivel de agua incorrecto",
+        "causa_probable": "Sensor optico de nivel de agua (OWS) sucio de grasa o defectuoso",
+        "pasos_reparacion": "Quitar filtros. Limpiar a fondo el sensor optico (situado en el fondo del pozo del filtro) usando un cepillo de dientes con jabon. Si persiste, desmontar sensor por debajo y sustituir por uno nuevo.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavavajillas Samsung DW60A8060US",
+        "codigo_error": "4E",
+        "sintoma": "Muestra error 4E y emite pitidos sin coger agua en absoluto",
+        "causa_probable": "Fallo del caudalimetro de la camara de agua (diverter) que no cuenta pulsos",
+        "pasos_reparacion": "Retirar panel lateral izquierdo. Inspeccionar la camara de agua o distribuidor. Comprobar placa del sensor del caudalimetro (pequeña placa electronica con un interruptor reed). Sustituir caudalimetro.",
+        "porcentaje_certeza": 75,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Lavavajillas Candy Bravo",
+        "codigo_error": "E8",
+        "sintoma": "Pitido continuo, error E8 y sale vapor muy caliente por los bordes de la puerta",
+        "causa_probable": "Termostato limite o rele de calentamiento pegado en la placa, agua hirviendo sin control",
+        "pasos_reparacion": "Desconectar energia electrica inmediatamente. Esperar a que enfrie. Revisar los reles de la placa de control electronica. Cambiar placa o desoldar rele defectuoso para evitar incendios.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Horno Siemens HB578G0S0",
+        "codigo_error": "No especificado",
+        "sintoma": "El horno funciona pero no calienta en el modo grill superior",
+        "causa_probable": "Resistencia de grill (resistencia superior) cortada o abierta",
+        "pasos_reparacion": "Desconectar fusibles de alimentacion en cuadro. Desmontar los soportes de la resistencia en el techo interior. Medir resistencia en bornes con multimetro. Si marca infinito, sustituir resistencia superior de doble circuito.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Horno Bosch HBA512ER0",
+        "codigo_error": "No especificado",
+        "sintoma": "Se apaga por completo a los 10 minutos de estar cocinando y no enciende nada hasta que se enfria",
+        "causa_probable": "Termostato de seguridad de sobretemperatura defectuoso o ventilador tangencial parado",
+        "pasos_reparacion": "Desconectar de la corriente. Comprobar si gira libremente el ventilador de refrigeracion superior (tangencial). Si gira bien, medir el termostato de seguridad (clixon) situado encima de la boveda. Cambiar termostato de 120C.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Horno Teka HL 840",
+        "codigo_error": "No especificado",
+        "sintoma": "El horno esta completamente inactivo y solo parpadean las letras en el reloj digital",
+        "causa_probable": "Corte de corriente previo y horno a la espera de programacion del reloj",
+        "pasos_reparacion": "Pulsar simultaneamente los botones de programador del reloj (generalmente +/- o boton central de duracion) hasta que deje de parpadear y ajustar la hora. Esto rehabilita el circuito de las resistencias.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 5
+    },
+    {
+        "aparato": "Horno Balay 3HB2031X0",
+        "codigo_error": "No especificado",
+        "sintoma": "Al encender el horno en modo calor convencional salta el interruptor diferencial de la vivienda",
+        "causa_probable": "Derivacion interna (aislamiento roto) en la resistencia inferior o circular de aire",
+        "pasos_reparacion": "Desconectar horno de la corriente. Quitar chapa trasera de conexiones. Desconectar los cables de la resistencia inferior y de la circular. Medir aislamiento de cada pin de resistencia a chapa. Cambiar la resistencia dañada.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Horno Samsung NV7B44205US",
+        "codigo_error": "C-21",
+        "sintoma": "Da pitido de error continuo y muestra codigo C-21",
+        "causa_probable": "Sonda de temperatura (sensor termopar RTD) defectuosa o sobrecalentamiento real",
+        "pasos_reparacion": "Esperar a que se enfrie. Si persiste el codigo C-21, acceder a la parte trasera, medir la resistencia de la sonda de temperatura (debe dar aprox 1000 ohmios a 20C). Cambiar sensor si da lecturas anomalas.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Horno LG WDEP9423F",
+        "codigo_error": "F-9",
+        "sintoma": "El bloqueo de puerta de la pirolisis se queda atascado y muestra error F-9",
+        "causa_probable": "Motor o microinterruptor del cierre de seguridad de pirolisis dañado",
+        "pasos_reparacion": "Desconectar horno 5 minutos para ver si resetea. Si no, desmontar panel superior, liberar pestillo manualmente para abrir puerta. Comprobar motor y micro de cierre. Cambiar modulo de bloqueo pirolitico.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Horno Whirlpool AKZ9 6230 IX",
+        "codigo_error": "No especificado",
+        "sintoma": "La comida queda poco cocinada por abajo en funcion normal de pasteleria",
+        "causa_probable": "Resistencia de solera (resistencia inferior oculta) quemada",
+        "pasos_reparacion": "Desconectar corriente. Quitar tapas protectoras. Localizar la resistencia de la solera (abajo del todo). Medir continuidad. Sustituir resistencia inferior cortada.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Horno Electrolux EOD3H40X",
+        "codigo_error": "No especificado",
+        "sintoma": "El ventilador interior de conveccion hace un ruido chirriante muy molesto",
+        "causa_probable": "Falta de lubricacion en el eje del motor del ventilador de conveccion o tuerca floja",
+        "pasos_reparacion": "Desconectar de la red. Retirar la rejilla protectora del fondo del horno. Apretar la tuerca de las aspas. Si el ruido sigue, quitar tapa trasera, aplicar grasa de alta temperatura al eje o sustituir motor de conveccion.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Horno AEG BPS331120M",
+        "codigo_error": "F105",
+        "sintoma": "Muestra error F105 y no permite iniciar ningun programa de horneado",
+        "causa_probable": "Fallo de conexion en el bus de comunicacion entre la placa display y la placa de potencia",
+        "pasos_reparacion": "Desconectar. Retirar carcasa superior de chapa. Comprobar los cables planos de interconexion entre ambas placas electronicas. Limpiar contactos de bus con limpiacontactos o cambiar cable plano.",
+        "porcentaje_certeza": 75,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Horno Balay 3HB5888X0",
+        "codigo_error": "No especificado",
+        "sintoma": "La luz interna no enciende pero el horno calienta bien",
+        "causa_probable": "Bombilla halogena interior fundida o cristal protector atascado por grasa",
+        "pasos_reparacion": "Desconectar de la red. Desenroscar la tapa de cristal protectora (usar un paño seco para mejor agarre). Retirar bombilla fundida G9 de 25W/40W y colocar una nueva apta para 300C. Enroscar tapa protectora.",
+        "porcentaje_certeza": 95,
+        "grado_peligrosidad": 5
+    },
+    {
+        "aparato": "Secadora Bosch WTG85230EE",
+        "codigo_error": "No especificado",
+        "sintoma": "La secadora funciona pero la ropa sale completamente humeda tras terminar",
+        "causa_probable": "Intercambiador de calor de la bomba de calor obstruido por pelusas y polvo",
+        "pasos_reparacion": "Abrir la compuerta inferior del condensador. Extraer el filtro de pelusas inferior. Lavar a fondo el condensador con agua o usar aspirador para eliminar las pelusas compactadas que bloquean el flujo de aire.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Secadora Balay 3SB286B",
+        "codigo_error": "E56",
+        "sintoma": "Se detiene a los pocos minutos de arrancar y parpadea el codigo E56",
+        "causa_probable": "Fallo en el sensor de humedad conductor (barras de humedad metalicas) por acumulacion de cal o suavizante",
+        "pasos_reparacion": "Localizar las dos tiras metalicas del sensor de humedad bajo la rejilla del filtro dentro del tambor. Limpiarlas frotando con un estropajo suave humedecido en vinagre para eliminar la pelicula invisible aislante de cal.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 5
+    },
+    {
+        "aparato": "Secadora Beko DH 8512 RX",
+        "codigo_error": "No especificado",
+        "sintoma": "Se enciende el piloto de deposito de agua lleno aunque este vacio",
+        "causa_probable": "Bomba de condensado obstruida por pelusas que bloquea el interruptor flotador de nivel",
+        "pasos_reparacion": "Desconectar de la red. Acceder a la parte inferior trasera derecha donde se ubica la microbomba. Limpiar el deposito pequeño del flotador. Quitar el tapon de pelusas alrededor de la bomba y probar.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Secadora Samsung DV90T5240TW",
+        "codigo_error": "HC",
+        "sintoma": "La secadora se calienta en exceso y se para mostrando error HC",
+        "causa_probable": "Termistor de salida de aire defectuoso o resistencia de calefaccion atascada con sobrecalentamiento",
+        "pasos_reparacion": "Limpiar todos los filtros de aire por completo. Desmontar tapa de resistencia trasera y medir resistencia NTC de la tobera. Sustituir termostato de seguridad de rearme manual de la resistencia.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 2
+    },
+    {
+        "aparato": "Secadora LG DF90V9WE",
+        "codigo_error": "tE1",
+        "sintoma": "El programa de secado no calienta y da codigo de error tE1",
+        "causa_probable": "Sensor de temperatura del evaporador o compresor defectuoso",
+        "pasos_reparacion": "Desconectar equipo. Acceder a la unidad compresora inferior. Comprobar sonda NTC conectada en el tubo de retorno del refrigerante. Sustituir sensor NTC averiado por uno compatible.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Secadora Electrolux EW7H4822IB",
+        "codigo_error": "No especificado",
+        "sintoma": "El tambor no gira pero el motor zumba de forma intermitente",
+        "causa_probable": "Correa de transmision rota o condensador de arranque del motor agotado",
+        "pasos_reparacion": "Girar el tambor a mano: si da vueltas sin ninguna resistencia, la correa esta rota. Si opone resistencia, retirar chasis, comprobar capacidad del condensador de arranque del motor (usualmente 7uF/9uF) y cambiar si da baja medida.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Secadora Whirlpool FFT M11 82Y ES",
+        "codigo_error": "F04",
+        "sintoma": "Da pitidos y muestra codigo de error F04",
+        "causa_probable": "Fallo de comunicacion en la tarjeta electronica o rele del motor principal fallando",
+        "pasos_reparacion": "Desconectar alimentacion. Acceder al modulo electronico frontal. Desenchufar y limpiar conectores con espray dielectrico. Verificar soldaduras en los reles del motor. Cambiar tarjeta de potencia.",
+        "porcentaje_certeza": 70,
+        "grado_peligrosidad": 3
+    },
+    {
+        "aparato": "Secadora Siemens WT47G429EE",
+        "codigo_error": "No especificado",
+        "sintoma": "Produce un golpeteo ritmico fuerte muy molesto con cada giro del tambor",
+        "causa_probable": "Rodillo tensor de la correa desgastado o polea de desvio del tambor dañada",
+        "pasos_reparacion": "Desmontar la chapa lateral de la secadora. Inspeccionar la polea tensora del motor. Si el plastico del rodillo esta agrietado o gastado, cambiar rodillo tensor y polea de transmision.",
+        "porcentaje_certeza": 85,
+        "grado_peligrosidad": 4
+    },
+    {
+        "aparato": "Secadora Teka TKS 700 S",
+        "codigo_error": "No especificado",
+        "sintoma": "Huele a plastico quemado muy fuerte y salta el fusible termico",
+        "causa_probable": "Resistencia de calefaccion quemada o cortocircuito de la resistencia debido a flujo de aire insuficiente",
+        "pasos_reparacion": "Desconectar de inmediato. Retirar bloque de resistencia trasero. Sustituir resistencia quemada. Limpiar la tuberia de salida trasera que suele estar colmatada de pelusa dura y verificar motor del ventilador.",
+        "porcentaje_certeza": 90,
+        "grado_peligrosidad": 1
+    },
+    {
+        "aparato": "Secadora AEG T8DBG842",
+        "codigo_error": "E60",
+        "sintoma": "Muestra error E60 indicando fallo general de calentamiento",
+        "causa_probable": "Compresor de la bomba de calor bloqueado o rele del compresor defectuoso",
+        "pasos_reparacion": "Verificar arranque del compresor de la bomba de calor inferior. Si intenta arrancar y corta por termico, comprobar el condensador del compresor. Si el condensador esta bien, el compresor esta gripado.",
+        "porcentaje_certeza": 80,
+        "grado_peligrosidad": 2
+    }
+]
