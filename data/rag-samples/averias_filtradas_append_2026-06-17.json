@@ -1,0 +1,380 @@
+[
+  {
+    "aparato": "Microondas Beko MOC 20100",
+    "sintoma": "El microondas no funciona.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Fallo de alimentación, fusible de línea quemado, termostato térmico abierto, placa de control defectuosa o enclavamiento de puerta sin cerrar correctamente.",
+    "pasos_reparacion": "Desconectar el equipo. Comprobar enchufe, toma, fusible de la instalación y fusible interno. Verificar continuidad del fusible térmico, cierre de puerta y llegada de voltaje a la placa de control. Si se abre el equipo, descargar antes el condensador de alta tensión.",
+    "porcentaje_certeza": 90,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas Beko MOC 20100",
+    "sintoma": "Se acumula suciedad o restos de productos de limpieza en las superficies de cierre.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Acumulación de suciedad, restos de comida o residuos de limpieza en superficies de cierre o cavidad.",
+    "pasos_reparacion": "Desconectar el microondas y dejarlo enfriar. Limpiar superficies de cierre, cavidad, anillo y base del plato con producto no abrasivo. Retirar restos de comida y comprobar que la puerta cierra sin obstáculos.",
+    "porcentaje_certeza": 86,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Lavadora Beko",
+    "sintoma": "El aparato presenta fuga o goteo de agua.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Junta, manguera, depósito, bomba o conexión hidráulica deteriorada u obstruida.",
+    "pasos_reparacion": "Desconectar el aparato. Localizar el punto de fuga, revisar juntas y mangueras, limpiar filtros o desagües y sustituir la pieza dañada antes de probar de nuevo.",
+    "porcentaje_certeza": 80,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Lavadora Beko",
+    "sintoma": "El filtro presenta suciedad, residuos u obstrucción.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Acumulación de suciedad, grasa, migas o residuos en filtros, cavidades o superficies de cierre.",
+    "pasos_reparacion": "Desconectar el aparato. Limpiar filtros, cavidades y superficies de cierre con productos no abrasivos, retirar residuos acumulados y comprobar que no quedan obstrucciones.",
+    "porcentaje_certeza": 84,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Lavadora GE",
+    "sintoma": "El aparato presenta fuga o goteo de agua.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Junta, manguera, depósito, bomba o conexión hidráulica deteriorada u obstruida.",
+    "pasos_reparacion": "Desconectar el aparato. Localizar el punto de fuga, revisar juntas y mangueras, limpiar filtros o desagües y sustituir la pieza dañada antes de probar de nuevo.",
+    "porcentaje_certeza": 80,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Lavadora GE",
+    "sintoma": "El filtro presenta suciedad, residuos u obstrucción.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Acumulación de suciedad, grasa, migas o residuos en filtros, cavidades o superficies de cierre.",
+    "pasos_reparacion": "Desconectar el aparato. Limpiar filtros, cavidades y superficies de cierre con productos no abrasivos, retirar residuos acumulados y comprobar que no quedan obstrucciones.",
+    "porcentaje_certeza": 84,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Frigorífico GE",
+    "sintoma": "El frigorífico no mantiene la temperatura correctamente.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Puerta mal sellada, condensador sucio, sensor de temperatura desajustado o fallo del sistema de frío.",
+    "pasos_reparacion": "Revisar cierre y juntas de puerta, limpiar condensador y rejillas de ventilación, comprobar ajuste del termostato y verificar sensores o circuito de refrigeración.",
+    "porcentaje_certeza": 76,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Frigorífico GE",
+    "sintoma": "El aparato presenta fuga o goteo de agua.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Junta, manguera, depósito, bomba o conexión hidráulica deteriorada u obstruida.",
+    "pasos_reparacion": "Desconectar el aparato. Localizar el punto de fuga, revisar juntas y mangueras, limpiar filtros o desagües y sustituir la pieza dañada antes de probar de nuevo.",
+    "porcentaje_certeza": 80,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Frigorífico GE",
+    "sintoma": "El filtro presenta suciedad, residuos u obstrucción.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Acumulación de suciedad, grasa, migas o residuos en filtros, cavidades o superficies de cierre.",
+    "pasos_reparacion": "Desconectar el aparato. Limpiar filtros, cavidades y superficies de cierre con productos no abrasivos, retirar residuos acumulados y comprobar que no quedan obstrucciones.",
+    "porcentaje_certeza": 84,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Frigorífico GE",
+    "sintoma": "La luz interior no funciona.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Fallo de alimentación, fusible, interruptor, cierre de seguridad o módulo electrónico.",
+    "pasos_reparacion": "Comprobar toma eléctrica, cable y fusible. Reiniciar el equipo si procede, verificar cierres o bloqueos de seguridad y revisar el módulo de control si la alimentación es correcta.",
+    "porcentaje_certeza": 75,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Frigorífico GE",
+    "sintoma": "El aparato emite ruidos inusuales durante el funcionamiento.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Equipo desnivelado, piezas sueltas, carga mal distribuida o desgaste en componentes móviles.",
+    "pasos_reparacion": "Nivelar el aparato, revisar fijaciones y soportes, redistribuir la carga si aplica y comprobar motor, rodamientos o ventiladores si el ruido persiste.",
+    "porcentaje_certeza": 74,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Frigorífico GE",
+    "sintoma": "Un componente móvil está atascado o bloqueado.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Residuo, pieza desplazada o falta de lubricación en un componente móvil.",
+    "pasos_reparacion": "Desconectar el aparato, retirar el bloqueo visible, limpiar la zona afectada y comprobar que el mecanismo se mueve libremente antes de reanudar el uso.",
+    "porcentaje_certeza": 78,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Lavavajillas GE",
+    "sintoma": "El filtro presenta suciedad, residuos u obstrucción.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Acumulación de suciedad, grasa, migas o residuos en filtros, cavidades o superficies de cierre.",
+    "pasos_reparacion": "Desconectar el aparato. Limpiar filtros, cavidades y superficies de cierre con productos no abrasivos, retirar residuos acumulados y comprobar que no quedan obstrucciones.",
+    "porcentaje_certeza": 84,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Lavavajillas GE",
+    "sintoma": "El aparato presenta fuga o goteo de agua.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Junta, manguera, depósito, bomba o conexión hidráulica deteriorada u obstruida.",
+    "pasos_reparacion": "Desconectar el aparato. Localizar el punto de fuga, revisar juntas y mangueras, limpiar filtros o desagües y sustituir la pieza dañada antes de probar de nuevo.",
+    "porcentaje_certeza": 80,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Lavavajillas GE",
+    "sintoma": "Un componente móvil está atascado o bloqueado.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Residuo, pieza desplazada o falta de lubricación en un componente móvil.",
+    "pasos_reparacion": "Desconectar el aparato, retirar el bloqueo visible, limpiar la zona afectada y comprobar que el mecanismo se mueve libremente antes de reanudar el uso.",
+    "porcentaje_certeza": 78,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Lavavajillas Beko",
+    "sintoma": "El filtro presenta suciedad, residuos u obstrucción.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Acumulación de suciedad, grasa, migas o residuos en filtros, cavidades o superficies de cierre.",
+    "pasos_reparacion": "Desconectar el aparato. Limpiar filtros, cavidades y superficies de cierre con productos no abrasivos, retirar residuos acumulados y comprobar que no quedan obstrucciones.",
+    "porcentaje_certeza": 84,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Lavavajillas Beko",
+    "sintoma": "El aparato presenta fuga o goteo de agua.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Junta, manguera, depósito, bomba o conexión hidráulica deteriorada u obstruida.",
+    "pasos_reparacion": "Desconectar el aparato. Localizar el punto de fuga, revisar juntas y mangueras, limpiar filtros o desagües y sustituir la pieza dañada antes de probar de nuevo.",
+    "porcentaje_certeza": 80,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Lavadora Beko",
+    "sintoma": "El aparato emite ruidos inusuales durante el funcionamiento.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Equipo desnivelado, piezas sueltas, carga mal distribuida o desgaste en componentes móviles.",
+    "pasos_reparacion": "Nivelar el aparato, revisar fijaciones y soportes, redistribuir la carga si aplica y comprobar motor, rodamientos o ventiladores si el ruido persiste.",
+    "porcentaje_certeza": 74,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Lavadora GE",
+    "sintoma": "El aparato emite ruidos inusuales durante el funcionamiento.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Equipo desnivelado, piezas sueltas, carga mal distribuida o desgaste en componentes móviles.",
+    "pasos_reparacion": "Nivelar el aparato, revisar fijaciones y soportes, redistribuir la carga si aplica y comprobar motor, rodamientos o ventiladores si el ruido persiste.",
+    "porcentaje_certeza": 74,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Lavadora GE",
+    "sintoma": "Un componente móvil está atascado o bloqueado.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Residuo, pieza desplazada o falta de lubricación en un componente móvil.",
+    "pasos_reparacion": "Desconectar el aparato, retirar el bloqueo visible, limpiar la zona afectada y comprobar que el mecanismo se mueve libremente antes de reanudar el uso.",
+    "porcentaje_certeza": 78,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Lavadora Beko",
+    "sintoma": "Un componente móvil está atascado o bloqueado.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Residuo, pieza desplazada o falta de lubricación en un componente móvil.",
+    "pasos_reparacion": "Desconectar el aparato, retirar el bloqueo visible, limpiar la zona afectada y comprobar que el mecanismo se mueve libremente antes de reanudar el uso.",
+    "porcentaje_certeza": 78,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Horno GE",
+    "sintoma": "El aparato no enciende.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Fallo de alimentación, fusible, interruptor, cierre de seguridad o módulo electrónico.",
+    "pasos_reparacion": "Comprobar toma eléctrica, cable y fusible. Reiniciar el equipo si procede, verificar cierres o bloqueos de seguridad y revisar el módulo de control si la alimentación es correcta.",
+    "porcentaje_certeza": 75,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Lavavajillas Beko",
+    "sintoma": "El aparato emite ruidos inusuales durante el funcionamiento.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Equipo desnivelado, piezas sueltas, carga mal distribuida o desgaste en componentes móviles.",
+    "pasos_reparacion": "Nivelar el aparato, revisar fijaciones y soportes, redistribuir la carga si aplica y comprobar motor, rodamientos o ventiladores si el ruido persiste.",
+    "porcentaje_certeza": 74,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Microondas Balay",
+    "sintoma": "El plato giratorio roza, hace ruido o no se mueve correctamente.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Suciedad, cuerpo extraño, aro giratorio mal colocado, engranaje de arrastre roto o motor del plato defectuoso.",
+    "pasos_reparacion": "Retirar plato y aro giratorio. Limpiar la hendidura y la zona de accionamiento, comprobar que el arrastre encaja correctamente y verificar el motor síncrono del plato si el microondas calienta pero el plato no gira.",
+    "porcentaje_certeza": 88,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "El plato giratorio roza, hace ruido o no se mueve correctamente.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Suciedad, cuerpo extraño, aro giratorio mal colocado, engranaje de arrastre roto o motor del plato defectuoso.",
+    "pasos_reparacion": "Retirar plato y aro giratorio. Limpiar la hendidura y la zona de accionamiento, comprobar que el arrastre encaja correctamente y verificar el motor síncrono del plato si el microondas calienta pero el plato no gira.",
+    "porcentaje_certeza": 88,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El equipo no enciende y la pantalla permanece completamente apagada.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Fusible de línea quemado, termostato térmico abierto o placa de control defectuosa.",
+    "pasos_reparacion": "Desconectar el equipo. Medir continuidad del fusible principal y del fusible térmico. Verificar llegada de voltaje a la placa de control y sustituir el componente defectuoso. Descargar el condensador de alta tensión antes de cualquier comprobación interna.",
+    "porcentaje_certeza": 92,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El microondas enciende, temporiza y gira, pero no calienta.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Diodo de alta tensión cruzado, magnetrón agotado o condensador de alta tensión derivado.",
+    "pasos_reparacion": "Desconectar y descargar el condensador. Medir resistencia de filamentos del magnetrón, comprobar aislamiento a chasis y verificar diodo/condensador de alta tensión antes de sustituir el componente averiado.",
+    "porcentaje_certeza": 91,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "Se producen chispas en la cavidad interna.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Placa de mica carbonizada, pintura interior levantada o uso de utensilios metálicos.",
+    "pasos_reparacion": "Apagar el equipo. Retirar utensilios metálicos, sustituir la placa de mica si está quemada y reparar la zona afectada con esmalte dieléctrico apto para microondas.",
+    "porcentaje_certeza": 90,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El fusible de línea se quema inmediatamente al pulsar Start.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Condensador de alta tensión en cortocircuito o diodo de alta tensión en corto.",
+    "pasos_reparacion": "Desconectar y descargar el condensador. Comprobar capacitancia del condensador y verificar el diodo en ambos sentidos. Sustituir el componente en corto antes de reponer el fusible.",
+    "porcentaje_certeza": 92,
+    "grado_peligrosidad": 5
+  },
+  {
+    "aparato": "Microondas",
+    "sintoma": "El plato no gira pero el equipo sí calienta.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Motor síncrono del plato quemado o engranaje de arrastre plástico roto.",
+    "pasos_reparacion": "Verificar presencia de voltaje en los terminales del motor durante el ciclo. Medir la bobina del motor y sustituir motor o engranaje de arrastre si están abiertos, rotos o bloqueados.",
+    "porcentaje_certeza": 89,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Microondas Balay",
+    "sintoma": "El aparato no funciona.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Enchufe desconectado, corte de suministro eléctrico, fusible defectuoso o manejo incorrecto.",
+    "pasos_reparacion": "Conectar el enchufe, comprobar si funciona la luz de la cocina y revisar la caja de fusibles. Si fue una anomalía puntual, desconectar el fusible del aparato y volver a conectarlo tras unos 10 segundos.",
+    "porcentaje_certeza": 88,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Microondas Balay",
+    "sintoma": "El microondas no inicia el ciclo aunque el aparato tenga alimentación.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Puerta mal cerrada, restos de alimentos o cuerpo extraño bloqueando la puerta, o temporizador no programado.",
+    "pasos_reparacion": "Comprobar que la puerta cierra completamente y retirar restos de alimentos o cuerpos extraños. Programar el conmutador de tiempo antes de iniciar el ciclo.",
+    "porcentaje_certeza": 87,
+    "grado_peligrosidad": 3
+  },
+  {
+    "aparato": "Microondas Balay",
+    "sintoma": "Los alimentos se calientan más lentamente que antes.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Potencia de microondas demasiado baja, cantidad de alimento mayor a la habitual o alimento más frío de lo normal.",
+    "pasos_reparacion": "Seleccionar una potencia mayor, aumentar el tiempo si la cantidad es superior y remover o dar la vuelta a los alimentos durante el calentamiento.",
+    "porcentaje_certeza": 86,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Microondas Balay",
+    "sintoma": "El plato giratorio emite chirridos o ruidos de roce.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Suciedad o elemento extraño en el dispositivo de accionamiento del plato giratorio.",
+    "pasos_reparacion": "Limpiar el anillo giratorio y la hendidura del compartimento de cocción. Comprobar que el plato queda correctamente encajado.",
+    "porcentaje_certeza": 88,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Microondas Balay",
+    "sintoma": "El modo microondas se interrumpe sin motivo aparente.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Avería interna del microondas o fallo intermitente de control.",
+    "pasos_reparacion": "Reiniciar el equipo desconectándolo de la alimentación. Si la interrupción se repite, derivar a Servicio de Asistencia Técnica para diagnóstico interno.",
+    "porcentaje_certeza": 82,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "El aparato no funciona.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Cable de red desconectado, fusible de la instalación disparado, corte de suministro o puerta mal cerrada.",
+    "pasos_reparacion": "Conectar el aparato a la red, comprobar el fusible de la caja de fusibles y verificar si otros aparatos tienen corriente. Revisar que la puerta no tenga restos de comida u objetos que impidan el cierre.",
+    "porcentaje_certeza": 89,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "Los alimentos tardan más en calentarse que antes.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Potencia de microondas demasiado baja, mayor cantidad de alimento o alimento más frío de lo esperado.",
+    "pasos_reparacion": "Seleccionar una potencia superior, aumentar la duración para cantidades mayores y remover o dar la vuelta a los alimentos de vez en cuando.",
+    "porcentaje_certeza": 87,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "El plato giratorio roza o arrastra.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Suciedad u objetos extraños en la zona de accionamiento del plato giratorio.",
+    "pasos_reparacion": "Limpiar el anillo giratorio y el rebaje del compartimento de cocción. Retirar cuerpos extraños y comprobar que el plato queda asentado correctamente.",
+    "porcentaje_certeza": 89,
+    "grado_peligrosidad": 2
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "El funcionamiento del microondas se interrumpe.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Avería de funcionamiento interna o fallo temporal del sistema de control.",
+    "pasos_reparacion": "Desconectar el fusible de la caja de fusibles y volver a conectarlo tras unos 10 segundos. Si el fallo persiste, avisar al Servicio de Asistencia Técnica indicando el mensaje exacto.",
+    "porcentaje_certeza": 84,
+    "grado_peligrosidad": 4
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "En el display aparecen tres ceros.",
+    "codigo_error": "000",
+    "causa_probable": "El suministro eléctrico se ha interrumpido y el reloj ha perdido la configuración.",
+    "pasos_reparacion": "Volver a ajustar la hora después de restablecer el suministro eléctrico.",
+    "porcentaje_certeza": 90,
+    "grado_peligrosidad": 1
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "El modo demo está activado y el aparato no calienta aunque los mandos funcionan.",
+    "codigo_error": "Modo demo",
+    "causa_probable": "Configuración de modo demostración activada.",
+    "pasos_reparacion": "Desactivar el modo demo desde los ajustes básicos del aparato siguiendo el procedimiento del manual.",
+    "porcentaje_certeza": 88,
+    "grado_peligrosidad": 1
+  },
+  {
+    "aparato": "Microondas Bosch",
+    "sintoma": "Aparece un mensaje de error relacionado con la apertura automática de la puerta.",
+    "codigo_error": "No especificado",
+    "causa_probable": "Fallo en el sistema de apertura automática de la puerta.",
+    "pasos_reparacion": "Desactivar el aparato, esperar 10 minutos y volver a activarlo. Si el mensaje reaparece, avisar al Servicio de Asistencia Técnica.",
+    "porcentaje_certeza": 86,
+    "grado_peligrosidad": 3
+  }
+]

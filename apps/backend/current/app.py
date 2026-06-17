@@ -54,6 +54,8 @@ Eres un motor de extraccion de datos de alta precision especializado en soporte 
 [OUTPUT FORMAT]
 Responde UNICAMENTE con un objeto JSON valido y plano que contenga exactamente estas 7 claves:
 "aparato", "sintoma", "codigo_error", "causa_probable", "pasos_reparacion", "porcentaje_certeza", "grado_peligrosidad".
+El campo "pasos_reparacion" debe ser SIEMPRE una lista JSON de pasos breves en texto plano.
+No devuelvas objetos, diccionarios, mapas clave-valor, markdown ni arrays anidados dentro de "pasos_reparacion".
 
 [ESCALA DE PELIGROSIDAD]
 Usa esta escala para el campo "grado_peligrosidad":
@@ -182,6 +184,26 @@ def clean_field(value: Any) -> str:
     text = re.sub(r"\n+", " ", text)
     text = re.sub(r"[ \t]{2,}", " ", text)
     return text.strip()
+
+
+def flatten_step_mapping(mapping: dict[Any, Any]) -> list[str]:
+    flattened: list[str] = []
+    for raw_key, raw_value in mapping.items():
+        key_text = clean_field(raw_key)
+        value_text = clean_field(raw_value)
+        if key_text:
+            flattened.append(key_text)
+        if value_text and value_text != key_text:
+            flattened.append(value_text)
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in flattened:
+        norm_item = norm(item)
+        if not norm_item or norm_item in seen:
+            continue
+        seen.add(norm_item)
+        deduped.append(item)
+    return deduped
 
 
 def tokenize_for_rag(text: str) -> set[str]:
@@ -472,13 +494,32 @@ def normalize_severity(value: Any) -> int | str:
 def normalize_steps_value(value: Any) -> list[str] | str:
     if value is None:
         return "No especificado"
+    if isinstance(value, dict):
+        cleaned = flatten_step_mapping(value)
+        return cleaned or "No especificado"
     if isinstance(value, list):
-        cleaned = [clean_field(step) for step in value if clean_field(step)]
+        cleaned: list[str] = []
+        for step in value:
+            if isinstance(step, dict):
+                cleaned.extend(flatten_step_mapping(step))
+                continue
+            step_text = clean_field(step)
+            if step_text:
+                cleaned.append(step_text)
         return cleaned or "No especificado"
     if isinstance(value, str):
         cleaned = clean_field(value)
         if not cleaned:
             return "No especificado"
+        if cleaned.startswith("{") and cleaned.endswith("}"):
+            try:
+                decoded = json.loads(cleaned)
+            except json.JSONDecodeError:
+                decoded = None
+            if isinstance(decoded, dict):
+                mapped_steps = flatten_step_mapping(decoded)
+                if mapped_steps:
+                    return mapped_steps
         parts = [segment.strip(" -") for segment in re.split(r"\s*(?:\d+\.\s+|;\s+|\|\s+)\s*", cleaned) if segment.strip(" -")]
         if len(parts) > 1:
             return parts
@@ -690,11 +731,103 @@ def build_inconsistent_extraction_response(
 
 
 def normalize_steps(steps: Any) -> list[str]:
+    if isinstance(steps, dict):
+        return flatten_step_mapping(steps)
     if isinstance(steps, list):
-        return [str(step).strip() for step in steps if str(step).strip()]
+        normalized: list[str] = []
+        for step in steps:
+            if isinstance(step, dict):
+                normalized.extend(flatten_step_mapping(step))
+                continue
+            step_text = str(step).strip()
+            if step_text:
+                normalized.append(step_text)
+        return normalized
     if isinstance(steps, str) and steps.strip():
-        return [steps.strip()]
+        raw = steps.strip()
+        if raw.startswith("{") and raw.endswith("}"):
+            try:
+                decoded = json.loads(raw)
+            except json.JSONDecodeError:
+                decoded = None
+            if isinstance(decoded, dict):
+                return flatten_step_mapping(decoded)
+        parts = [
+            segment.strip(" -")
+            for segment in re.split(r"(?:\n+|\r+|;\s+|\.\s+(?=[A-ZÁÉÍÓÚÑ0-9]))", raw)
+            if segment.strip(" -")
+        ]
+        return parts or [raw]
     return []
+
+
+def extract_error_code_token(text: str) -> str | None:
+    match = re.search(r"\b[A-Z]{1,3}\d{1,4}\b", text.upper())
+    if match:
+        return match.group(0)
+    return None
+
+
+def is_steps_payload_suspicious(steps: Any) -> bool:
+    if isinstance(steps, dict):
+        return True
+    if isinstance(steps, list):
+        return any(isinstance(item, dict) for item in steps)
+    if isinstance(steps, str):
+        stripped = steps.strip()
+        return stripped.startswith("{") and stripped.endswith("}")
+    return False
+
+
+def is_symptom_low_overlap(user_message: str, extracted_symptom: str) -> bool:
+    user_tokens = tokenize_for_rag(user_message)
+    symptom_tokens = tokenize_for_rag(extracted_symptom)
+    if not user_tokens or not symptom_tokens:
+        return False
+    overlap = len(user_tokens & symptom_tokens) / max(len(user_tokens), 1)
+    return overlap < 0.25
+
+
+def should_use_rag_anchor(user_message: str, extracted: dict[str, Any], rag_hits: list[dict[str, Any]]) -> bool:
+    if not rag_hits:
+        return False
+    top_hit = rag_hits[0]
+    score = float(top_hit.get("score", 1.0))
+    if score > 0.2:
+        return False
+
+    user_code = extract_error_code_token(user_message)
+    extracted_code = clean_field(extracted.get("codigo_error", ""))
+    hit_code = clean_field(top_hit.get("codigo_error", ""))
+    if user_code and hit_code and user_code == hit_code:
+        return True
+    if extracted_code and extracted_code != "No especificado" and extracted_code == hit_code:
+        return True
+
+    hit_appliance_tokens = tokenize_for_rag(str(top_hit.get("aparato", "")))
+    user_tokens = tokenize_for_rag(user_message)
+    shared_tokens = hit_appliance_tokens & user_tokens
+    return len(shared_tokens) >= 2
+
+
+def repair_extraction_with_rag(user_message: str, extracted: dict[str, Any], rag_hits: list[dict[str, Any]]) -> dict[str, Any]:
+    if not should_use_rag_anchor(user_message, extracted, rag_hits):
+        return extracted
+
+    repaired = dict(extracted)
+    top_hit = rag_hits[0]
+    repaired["aparato"] = sanitize_appliance_name(top_hit.get("aparato", repaired.get("aparato", "")), user_message)
+    repaired["causa_probable"] = clean_field(top_hit.get("causa_probable")) or repaired.get("causa_probable", "No especificado")
+    repaired["pasos_reparacion"] = normalize_steps_value(top_hit.get("pasos_reparacion"))
+
+    hit_code = clean_field(top_hit.get("codigo_error"))
+    if hit_code and hit_code != "No especificado":
+        repaired["codigo_error"] = hit_code
+
+    if is_symptom_low_overlap(user_message, str(repaired.get("sintoma", ""))):
+        repaired["sintoma"] = clean_field(user_message)
+
+    return fill_missing_fields(repaired)
 
 
 def build_structured_assistant_response(user_message: str, extracted: dict[str, Any]) -> str:
@@ -967,6 +1100,7 @@ def chat() -> tuple[Any, int] | Any:
 
     if extracted is not None:
         extracted["aparato"] = sanitize_appliance_name(extracted.get("aparato", ""), message)
+        extracted = repair_extraction_with_rag(message, extracted, rag_hits)
 
     if extracted is None:
         if mode == "assistant":

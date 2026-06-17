@@ -332,7 +332,7 @@
             </div>
 
             <script>
-                const exactMatchQuery = "Lavadora Samsung WW90T534DTW La lavadora no evacua el agua despues del lavado y muestra error 5C 5C Filtro de la bomba de desague obstruido o bomba de evacuacion rota ['Abrir la tapa de registro abajo a la derecha.', 'Colocar un recipiente y vaciar el agua por el tubo auxiliar.', 'Desenroscar el tapon del filtro.', 'Retirar monedas, pelusas u otros objetos.', 'Comprobar que las aspas de la bomba giran con libertad.']";
+                const exactMatchQuery = "Lavadora Samsung WW90T534DTW no evacua el agua despues del lavado y muestra error 5C";
             </script>
             <!-- Sugerencias para Presentación -->
             <div class="flex flex-wrap gap-2 mb-4">
@@ -538,14 +538,41 @@
         };
 
         const normalizeAssistantSteps = (steps) => {
+            if (steps && typeof steps === 'object' && !Array.isArray(steps)) {
+                const entries = Object.entries(steps);
+                const flattened = [];
+                for (const [rawKey, rawValue] of entries) {
+                    const keyText = String(rawKey ?? '').trim();
+                    const valueText = String(rawValue ?? '').trim();
+                    if (keyText) flattened.push(keyText);
+                    if (valueText && valueText !== keyText) flattened.push(valueText);
+                }
+                return flattened.filter(Boolean);
+            }
+
             if (Array.isArray(steps)) {
-                return steps
-                    .map((step) => String(step ?? '').trim())
-                    .filter(Boolean);
+                const normalized = [];
+                for (const step of steps) {
+                    if (step && typeof step === 'object') {
+                        normalized.push(...normalizeAssistantSteps(step));
+                        continue;
+                    }
+                    const stepText = String(step ?? '').trim();
+                    if (stepText) normalized.push(stepText);
+                }
+                return normalized;
             }
 
             const raw = String(steps ?? '').trim();
             if (!raw) return [];
+
+            if (raw.startsWith('{') && raw.endsWith('}')) {
+                try {
+                    return normalizeAssistantSteps(JSON.parse(raw));
+                } catch (_) {
+                    // Si no se puede parsear, seguimos con el fallback textual.
+                }
+            }
 
             return raw
                 .split(/(?:\n+|\r+|;\s+|\.\s+(?=[A-ZÁÉÍÓÚÑ0-9]))/)
