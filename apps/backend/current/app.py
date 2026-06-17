@@ -82,6 +82,13 @@ BRAND_KEYWORDS = [
 ]
 
 TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9_/-]{2,}")
+RAG_STOPWORDS = {
+    "el", "la", "los", "las", "un", "una", "unos", "unas",
+    "de", "del", "al", "y", "o", "u", "con", "sin", "por",
+    "para", "que", "se", "es", "esta", "está", "no", "pero",
+    "muy", "mas", "más", "nada", "todo", "toda", "hace",
+    "hacen", "hacer", "modo", "normal",
+}
 
 _milvus_client: MilvusClient | None = None
 _milvus_ok = False
@@ -177,6 +184,16 @@ def clean_field(value: Any) -> str:
     return text.strip()
 
 
+def tokenize_for_rag(text: str) -> set[str]:
+    normalized = norm(text)
+    tokens = {
+        token
+        for token in TOKEN_PATTERN.findall(normalized)
+        if len(token) >= 4 and token not in RAG_STOPWORDS
+    }
+    return tokens
+
+
 _embedding_fn = None
 
 def get_embedding_fn() -> Any:
@@ -196,7 +213,10 @@ def hash_embedding(text: str, dim: int = 384) -> list[float]:
     try:
         fn = get_embedding_fn()
         return fn.encode_queries([text])[0].tolist()
-    except Exception:
+    except Exception as e:
+        import traceback
+        print(f"HASH EMBEDDING EXCEPTION: {e}", flush=True)
+        traceback.print_exc()
         tokens = TOKEN_PATTERN.findall(norm(text))
         vector = [0.0] * dim
         if not tokens:
@@ -249,9 +269,29 @@ def hit_encaja_con_categoria(hit_aparato: str, categoria: str | None) -> bool:
     return any(norm(alias) in aparato_norm for alias in aliases)
 
 
-def rerank_hits_por_aparato(hits: list[dict[str, Any]], aparato_hint: str | None) -> list[dict[str, Any]]:
+def score_rag_hit(query: str, hit: dict[str, Any]) -> tuple[float, float, str]:
+    query_tokens = tokenize_for_rag(query)
+    hit_text = " ".join(
+        [
+            str(hit.get("aparato", "")),
+            str(hit.get("sintoma", "")),
+            str(hit.get("causa_probable", "")),
+            str(hit.get("codigo_error", "")),
+            str(hit.get("pasos_reparacion", "")),
+        ]
+    )
+    hit_tokens = tokenize_for_rag(hit_text)
+    overlap = len(query_tokens & hit_tokens)
+    return (
+        -float(overlap),
+        float(hit.get("score", 1.0)),
+        norm(str(hit.get("aparato", ""))),
+    )
+
+
+def rerank_hits_por_aparato(hits: list[dict[str, Any]], aparato_hint: str | None, query: str) -> list[dict[str, Any]]:
     if not aparato_hint:
-        return hits
+        return sorted(hits, key=lambda hit: score_rag_hit(query, hit))
 
     hits_compatibles = [
         hit for hit in hits if hit_encaja_con_categoria(str(hit.get("aparato", "")), aparato_hint)
@@ -259,10 +299,7 @@ def rerank_hits_por_aparato(hits: list[dict[str, Any]], aparato_hint: str | None
     if not hits_compatibles:
         return []
 
-    return sorted(
-        hits_compatibles,
-        key=lambda hit: norm(str(hit.get("aparato", ""))),
-    )
+    return sorted(hits_compatibles, key=lambda hit: score_rag_hit(query, hit))
 
 
 def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k: int = RAG_TOP_K) -> list[dict[str, Any]]:
@@ -272,12 +309,14 @@ def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k:
         return []
     try:
         vector = hash_embedding(consulta)
+        fetch_k = top_k if not aparato_hint else max(top_k * 5, 20)
         raw_results = client.search(
             collection_name=MILVUS_COLLECTION,
             data=[vector],
-            limit=top_k,
+            limit=fetch_k,
             output_fields=[
                 "aparato",
+                "sintoma",
                 "causa_probable",
                 "codigo_error",
                 "pasos_reparacion",
@@ -293,6 +332,7 @@ def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k:
                 {
                     "score": round(float(hit.get("distance", 0.0)), 4),
                     "aparato": aparato_original,
+                    "sintoma": entity.get("sintoma", ""),
                     "causa_probable": entity.get("causa_probable", ""),
                     "codigo_error": entity.get("codigo_error", ""),
                     "pasos_reparacion": entity.get("pasos_reparacion", ""),
@@ -300,7 +340,8 @@ def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k:
                     "porcentaje_certeza": entity.get("porcentaje_certeza", -1),
                 }
             )
-        return rerank_hits_por_aparato(hits, aparato_hint)
+        reranked_hits = rerank_hits_por_aparato(hits, aparato_hint, consulta)
+        return reranked_hits[:top_k]
     except Exception as exc:
         _milvus_ok = False
         _milvus_error = str(exc)

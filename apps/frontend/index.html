@@ -337,7 +337,7 @@
             <!-- Sugerencias para Presentación -->
             <div class="flex flex-wrap gap-2 mb-4">
                 <button onclick="fillInput(exactMatchQuery)" title="Demuestra una coincidencia casi perfecta (distancia 0.04) usando el registro original exacto de la base de datos." class="text-xs bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 px-3 py-1.5 rounded-full transition-colors border border-emerald-200 font-medium shadow-sm">
-                    🌟 Caso Perfecto (Distancia 0.04)
+                    🌟 Caso Perfecto (Similitud 96%)
                 </button>
                 <button onclick="fillInput('El microondas enciende pero no calienta la comida')" title="Demuestra deducción semántica RAG sin marca específica" class="text-xs bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-700 px-3 py-1.5 rounded-full transition-colors border border-blue-200 font-medium shadow-sm">
                     👍 Caso Bueno (Microondas genérico)
@@ -508,7 +508,7 @@
             const items = data.rag_hits.slice(0, 5).map((hit) => `
                 <li class="mb-2">
                     <div class="font-medium">${escapeHtml(hit.aparato || 'Caso recuperado')}</div>
-                    <div class="text-xs text-emerald-700">Distancia coseno: ${escapeHtml(hit.score ?? '')} · menor es mejor</div>
+                    <div class="text-xs text-emerald-700">Similitud: ${escapeHtml(hit.score ?? '')}</div>
                     <div class="mt-1 text-xs text-slate-700">${escapeHtml(hit.causa_probable || 'Sin causa registrada')}</div>
                 </li>
             `).join('');
