@@ -6,6 +6,7 @@ import json
 import math
 import os
 import re
+import time
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,11 @@ EXTRACTOR_MODEL = os.getenv("EXTRACTOR_MODEL", "qwen-fusionado")
 RESPONSE_MODEL = os.getenv("RESPONSE_MODEL", "llama3.2:1b")
 REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "600"))
 DEFAULT_MODE = os.getenv("DEFAULT_MODE", "assistant")
+OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "6h")
+EXTRACTOR_TIMEOUT = int(os.getenv("EXTRACTOR_TIMEOUT", "180"))
+ASSISTANT_TIMEOUT = int(os.getenv("ASSISTANT_TIMEOUT", "20"))
+ASSISTANT_SKIP_EXTRACTOR_SECONDS = float(os.getenv("ASSISTANT_SKIP_EXTRACTOR_SECONDS", "14"))
+ASSISTANT_SKIP_LOAD_RATIO = float(os.getenv("ASSISTANT_SKIP_LOAD_RATIO", "0.9"))
 
 app = Flask(__name__)
 
@@ -84,6 +90,8 @@ BRAND_KEYWORDS = [
 ]
 
 TOKEN_PATTERN = re.compile(r"[a-zA-Z0-9_/-]{2,}")
+ERROR_CODE_PATTERN = re.compile(r"\b[A-Z]{1,3}\d{1,4}[A-Z]?\b", re.IGNORECASE)
+MODEL_TOKEN_PATTERN = re.compile(r"\b(?=[A-Z0-9-]{4,}\b)(?=.*[A-Z])(?=.*\d)[A-Z0-9-]+\b", re.IGNORECASE)
 RAG_STOPWORDS = {
     "el", "la", "los", "las", "un", "una", "unos", "unas",
     "de", "del", "al", "y", "o", "u", "con", "sin", "por",
@@ -291,7 +299,67 @@ def hit_encaja_con_categoria(hit_aparato: str, categoria: str | None) -> bool:
     return any(norm(alias) in aparato_norm for alias in aliases)
 
 
-def score_rag_hit(query: str, hit: dict[str, Any]) -> tuple[float, float, str]:
+def detect_query_intents(query: str, categoria: str | None) -> set[str]:
+    lowered = norm(query)
+    intents: set[str] = set()
+    if categoria == "washing_machine":
+        if any(term in lowered for term in ("no desagua", "no evacua", "se queda con agua", "no vacia", "no vaciado")):
+            intents.add("drain_failure")
+    if categoria == "microwave":
+        if any(term in lowered for term in ("no calienta", "sale fria", "sin calor", "no calienta la comida", "enciende pero no calienta")):
+            intents.add("no_heat")
+    return intents
+
+
+def score_hit_intent(query: str, hit: dict[str, Any], categoria: str | None) -> tuple[int, int]:
+    intents = detect_query_intents(query, categoria)
+    if not intents:
+        return (0, 0)
+
+    hit_text = norm(
+        " ".join(
+            [
+                str(hit.get("aparato", "")),
+                str(hit.get("sintoma", "")),
+                str(hit.get("causa_probable", "")),
+                str(hit.get("codigo_error", "")),
+                str(hit.get("pasos_reparacion", "")),
+            ]
+        )
+    )
+
+    positive = 0
+    negative = 0
+
+    if "drain_failure" in intents:
+        if any(term in hit_text for term in ("desague", "evacuacion", "vaciado", "bomba", "filtro")):
+            positive += 1
+        if any(term in hit_text for term in ("fuga", "junta", "electrovalvula", "blocapuertas")):
+            negative += 1
+
+    if "no_heat" in intents:
+        if any(term in hit_text for term in ("magnetron", "magnetron", "inverter", "alta tension", "diodo", "condensador", "transformador", "filamento", "no calienta")):
+            positive += 1
+        if any(term in hit_text for term in ("plato", "engranaje", "suciedad", "modo demo", "aro giratorio")):
+            negative += 1
+
+    return (positive, negative)
+
+
+def detect_brands(text: str) -> set[str]:
+    lowered = norm(text)
+    return {brand for brand in BRAND_KEYWORDS if brand in lowered}
+
+
+def extract_error_codes(text: str) -> set[str]:
+    return {match.group(0).upper() for match in ERROR_CODE_PATTERN.finditer(text or "")}
+
+
+def extract_model_tokens(text: str) -> set[str]:
+    return {match.group(0).upper() for match in MODEL_TOKEN_PATTERN.finditer(text or "")}
+
+
+def score_rag_hit(query: str, hit: dict[str, Any], categoria: str | None) -> tuple[float, float, float, float, float, float, str]:
     query_tokens = tokenize_for_rag(query)
     hit_text = " ".join(
         [
@@ -304,7 +372,27 @@ def score_rag_hit(query: str, hit: dict[str, Any]) -> tuple[float, float, str]:
     )
     hit_tokens = tokenize_for_rag(hit_text)
     overlap = len(query_tokens & hit_tokens)
+    query_brands = detect_brands(query)
+    hit_brands = detect_brands(hit_text)
+    brand_match = 1 if query_brands and (query_brands & hit_brands) else 0
+    brand_penalty = 1 if query_brands and not brand_match else 0
+
+    query_codes = extract_error_codes(query)
+    hit_codes = extract_error_codes(hit_text)
+    code_match = 1 if query_codes and (query_codes & hit_codes) else 0
+
+    query_models = extract_model_tokens(query)
+    hit_models = extract_model_tokens(hit_text)
+    model_match = 1 if query_models and (query_models & hit_models) else 0
+    intent_positive, intent_negative = score_hit_intent(query, hit, categoria)
+
     return (
+        float(brand_penalty),
+        -float(model_match),
+        -float(code_match),
+        -float(brand_match),
+        -float(intent_positive),
+        float(intent_negative),
         -float(overlap),
         float(hit.get("score", 1.0)),
         norm(str(hit.get("aparato", ""))),
@@ -313,7 +401,7 @@ def score_rag_hit(query: str, hit: dict[str, Any]) -> tuple[float, float, str]:
 
 def rerank_hits_por_aparato(hits: list[dict[str, Any]], aparato_hint: str | None, query: str) -> list[dict[str, Any]]:
     if not aparato_hint:
-        return sorted(hits, key=lambda hit: score_rag_hit(query, hit))
+        return sorted(hits, key=lambda hit: score_rag_hit(query, hit, aparato_hint))
 
     hits_compatibles = [
         hit for hit in hits if hit_encaja_con_categoria(str(hit.get("aparato", "")), aparato_hint)
@@ -321,7 +409,7 @@ def rerank_hits_por_aparato(hits: list[dict[str, Any]], aparato_hint: str | None
     if not hits_compatibles:
         return []
 
-    return sorted(hits_compatibles, key=lambda hit: score_rag_hit(query, hit))
+    return sorted(hits_compatibles, key=lambda hit: score_rag_hit(query, hit, aparato_hint))
 
 
 def buscar_fragmentos_rag(consulta: str, aparato_hint: str | None = None, top_k: int = RAG_TOP_K) -> list[dict[str, Any]]:
@@ -788,6 +876,31 @@ def is_symptom_low_overlap(user_message: str, extracted_symptom: str) -> bool:
     return overlap < 0.25
 
 
+def field_overlap_ratio(left: str, right: str) -> float:
+    left_tokens = tokenize_for_rag(left)
+    right_tokens = tokenize_for_rag(right)
+    if not left_tokens or not right_tokens:
+        return 0.0
+    return len(left_tokens & right_tokens) / max(len(left_tokens), 1)
+
+
+def contains_incompatible_terms_for_category(text: str, categoria: str | None) -> bool:
+    if not categoria or not text:
+        return False
+    lowered = norm(text)
+    for term in DEVICE_CATALOG.get(categoria, {}).get("incompatible_terms", []):
+        if norm(term) in lowered:
+            return True
+    category_specific_terms = {
+        "microwave": ["agua", "hidraul", "manguera", "junta", "deposito", "electrovalvula"],
+        "washing_machine": ["magnetron", "alta tension", "inverter", "filamento", "placa de mica"],
+    }
+    for term in category_specific_terms.get(categoria, []):
+        if term in lowered:
+            return True
+    return False
+
+
 def should_use_rag_anchor(user_message: str, extracted: dict[str, Any], rag_hits: list[dict[str, Any]]) -> bool:
     if not rag_hits:
         return False
@@ -807,11 +920,37 @@ def should_use_rag_anchor(user_message: str, extracted: dict[str, Any], rag_hits
     hit_appliance_tokens = tokenize_for_rag(str(top_hit.get("aparato", "")))
     user_tokens = tokenize_for_rag(user_message)
     shared_tokens = hit_appliance_tokens & user_tokens
-    return len(shared_tokens) >= 2
+    if len(shared_tokens) >= 2:
+        return True
+
+    categoria = detect_device_category(user_message, str(extracted.get("aparato", "")))
+    intents = detect_query_intents(user_message, categoria)
+    extracted_cause = str(extracted.get("causa_probable", ""))
+    hit_cause = str(top_hit.get("causa_probable", ""))
+    if intents and score <= 0.35 and field_overlap_ratio(extracted_cause, hit_cause) < 0.2:
+        return True
+
+    intent_positive, intent_negative = score_hit_intent(user_message, top_hit, categoria)
+    if intents and intent_positive > 0 and intent_negative == 0 and score <= 0.55:
+        if field_overlap_ratio(extracted_cause, hit_cause) < 0.15:
+            return True
+    if intents and intent_positive > 0 and score <= 0.6:
+        if contains_incompatible_terms_for_category(extracted_cause, categoria):
+            return True
+
+    return False
 
 
 def repair_extraction_with_rag(user_message: str, extracted: dict[str, Any], rag_hits: list[dict[str, Any]]) -> dict[str, Any]:
-    if not should_use_rag_anchor(user_message, extracted, rag_hits):
+    categoria = detect_device_category(user_message, str(extracted.get("aparato", "")))
+    top_hit = rag_hits[0] if rag_hits else None
+    force_anchor = False
+    if top_hit and categoria and contains_incompatible_terms_for_category(str(extracted.get("causa_probable", "")), categoria):
+        top_hit_categoria = detect_device_category(str(top_hit.get("aparato", "")), str(top_hit.get("sintoma", "")))
+        if top_hit_categoria == categoria and float(top_hit.get("score", 1.0)) <= 0.6:
+            force_anchor = True
+
+    if not force_anchor and not should_use_rag_anchor(user_message, extracted, rag_hits):
         return extracted
 
     repaired = dict(extracted)
@@ -992,11 +1131,12 @@ def render_assistant_response_html(
     )
 
 
-def call_ollama_generate(model: str, prompt: str, num_predict: int = 350) -> str:
+def call_ollama_generate(model: str, prompt: str, num_predict: int = 350, timeout: int | None = None) -> str:
     payload = {
         "model": model,
         "prompt": prompt,
         "stream": False,
+        "keep_alive": OLLAMA_KEEP_ALIVE,
         "options": {
             "temperature": 0,
             "top_p": 0.9,
@@ -1006,11 +1146,67 @@ def call_ollama_generate(model: str, prompt: str, num_predict: int = 350) -> str
     response = requests.post(
         OLLAMA_GENERATE_URL,
         json=payload,
-        timeout=REQUEST_TIMEOUT,
+        timeout=timeout or REQUEST_TIMEOUT,
     )
     response.raise_for_status()
     data = response.json()
     return str(data.get("response", ""))
+
+
+def should_skip_assistant_model(extractor_elapsed: float) -> tuple[bool, str]:
+    if extractor_elapsed >= ASSISTANT_SKIP_EXTRACTOR_SECONDS:
+        return True, f"extractor_slow:{extractor_elapsed:.2f}s"
+    try:
+        load1, _, _ = os.getloadavg()
+        cpu_count = os.cpu_count() or 1
+        if load1 >= cpu_count * ASSISTANT_SKIP_LOAD_RATIO:
+            return True, f"high_load:{load1:.2f}/{cpu_count}"
+    except OSError:
+        pass
+    return False, ""
+
+
+def sanitize_assistant_text(text: str, user_message: str) -> str:
+    cleaned = clean_field(text)
+    if not cleaned:
+        return ""
+    cleaned = re.sub(r"^(respuesta|response)\s*:\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    cleaned = re.sub(
+        r"(?:Do you need help with anything else\?|¿Necesitas que te ayude con algo mas\??|¿Necesitas ayuda con algo mas\??)\s*$",
+        "",
+        cleaned,
+        flags=re.IGNORECASE,
+    ).strip()
+    blocked_markers = (
+        "es importante ",
+        "como siguiente paso",
+        "te sugiero",
+        "desconectar ",
+        "abrir ",
+        "vaciar ",
+        "desenroscar ",
+        "retirar ",
+        "limpiar ",
+        "comprobar ",
+        "medir ",
+        "sustituir ",
+        "contactar con el soporte",
+        "contacta con el soporte",
+        "official technical support",
+    )
+    sentences = [
+        sentence.strip()
+        for sentence in re.split(r"(?<=[.!?])\s+", cleaned)
+        if sentence.strip()
+    ]
+    filtered_sentences = [
+        sentence
+        for sentence in sentences
+        if not any(marker in norm(sentence) for marker in blocked_markers)
+    ]
+    compact = " ".join((filtered_sentences or sentences)[:2]).strip()
+    return compact
 
 
 def build_assistant_prompt(
@@ -1027,15 +1223,22 @@ def build_assistant_prompt(
         rag_block = f"\n[CONTEXTO RAG]\n{contexto_rag}\n"
     return f"""Eres un asistente tecnico multilingue especializado en electrodomesticos.
 Responde solo en {target_language}. No cambies de idioma.
-Escribe una respuesta de longitud corta-media, algo mas desarrollada que una sola frase, pero sin hacerse pesada visualmente.
-Se practico, claro y cuidadoso con la seguridad.
-Convierte el diagnostico extraido en una respuesta natural pensada para el usuario final.
+Tu funcion es redactar un resumen conversacional breve para el usuario final a partir de datos YA validados.
 No inventes hechos que no esten respaldados por los datos extraidos ni por el contexto RAG.
-Si la extraccion contiene detalles sospechosos o incoherentes, no los presentes como hechos confirmados.
-Si la peligrosidad extraida es 1, advierte de forma explicita que el usuario debe dejar de manipular el aparato y contactar con el soporte tecnico oficial si hace falta.
+No alteres codigos de error, marcas, modelos, sintomas, causas ni pasos si no aparecen en los datos.
+Si la extraccion contiene detalles sospechosos o incoherentes, expresalo con prudencia en vez de afirmarlo como hecho seguro.
+Si la peligrosidad extraida es 1, puedes mencionar de forma breve que conviene no seguir manipulando el aparato, pero sin desarrollar la recomendacion completa.
 No menciones etiquetas internas, nombres de bloques, numeraciones de casos recuperados ni detalles de implementacion.
 No digas cosas como "caso recuperado", "contexto RAG", "transcripcion" o frases parecidas.
-Si no tienes informacion suficiente para recomendar una accion fiable, dilo con claridad y sugiere contactar con el soporte tecnico oficial.
+No menciones el porcentaje de certeza.
+No listes pasos de reparacion ni escribas bullets.
+No des recomendaciones de soporte tecnico detalladas.
+No hagas la pregunta final al usuario.
+No repitas el codigo de error mas de una vez.
+Devuelve un solo parrafo breve de 1 a 2 frases que:
+- resuma el problema detectado,
+- mencione la causa probable si es fiable,
+- y solo añada una nota corta de prudencia si el caso es critico.
 {rag_block}
 [USER_MESSAGE]
 {user_message}
@@ -1047,12 +1250,7 @@ Si no tienes informacion suficiente para recomendar una accion fiable, dilo con 
 {issues_block}
 
 [TASK]
-Escribe una respuesta clara para el usuario final en texto plano.
-Debe incluir, cuando sea posible:
-1. un resumen breve del problema detectado,
-2. la causa probable o la incertidumbre si no esta clara,
-3. uno o varios pasos siguientes prudentes,
-4. una pregunta final pidiendo si necesita algo mas.
+Escribe un unico parrafo claro para el usuario final en texto plano.
 Si faltan campos importantes o no son fiables, dilo de forma clara en vez de inventar detalles.
 No devuelvas JSON."""
 
@@ -1086,14 +1284,17 @@ def chat() -> tuple[Any, int] | Any:
     rag_hits = buscar_fragmentos_rag(message, aparato_hint=aparato_hint, top_k=RAG_TOP_K) if use_rag else []
     contexto_rag = construir_contexto_rag(rag_hits, message)
 
+    extractor_started_at = time.monotonic()
     try:
         raw_response = call_ollama_generate(
             EXTRACTOR_MODEL,
             build_prompt(message, contexto_rag),
-            num_predict=500,
+            num_predict=260,
+            timeout=EXTRACTOR_TIMEOUT,
         )
     except requests.RequestException as exc:
         return jsonify({"error": f"Error al consultar Ollama: {exc}"}), 502
+    extractor_elapsed = time.monotonic() - extractor_started_at
 
     json_text = extract_first_json(raw_response)
     extracted = validate_extraction_json(json_text)
@@ -1127,11 +1328,29 @@ def chat() -> tuple[Any, int] | Any:
                 "rag_used": bool(rag_hits),
                 "rag_hits": rag_hits,
                 "extractor_json": extracted,
+                "extractor_elapsed_seconds": round(extractor_elapsed, 2),
                 "use_rag": use_rag,
             }
         )
 
-    if issues:
+    assistant_text = ""
+    assistant_model_error = ""
+    assistant_model_skipped, assistant_skip_reason = should_skip_assistant_model(extractor_elapsed)
+    if not assistant_model_skipped:
+        try:
+            assistant_text = sanitize_assistant_text(
+                call_ollama_generate(
+                    RESPONSE_MODEL,
+                    build_assistant_prompt(message, extracted, issues, contexto_rag),
+                    num_predict=96,
+                    timeout=ASSISTANT_TIMEOUT,
+                ),
+                message,
+            )
+        except requests.RequestException as exc:
+            assistant_model_error = str(exc)
+
+    if issues and not assistant_text:
         assistant_html = (
             f"<div>{html.escape(build_inconsistent_extraction_response(message, extracted, issues)).replace(chr(10), '<br>')}</div>"
         )
@@ -1148,6 +1367,12 @@ def chat() -> tuple[Any, int] | Any:
             "response": response_html,
             "mode": mode,
             "extractor_json": extracted,
+            "assistant_text": assistant_text,
+            "assistant_model_error": assistant_model_error,
+            "assistant_model_used": bool(assistant_text),
+            "assistant_model_skipped": assistant_model_skipped,
+            "assistant_model_skip_reason": assistant_skip_reason,
+            "extractor_elapsed_seconds": round(extractor_elapsed, 2),
             "rag_used": bool(rag_hits),
             "rag_hits": rag_hits,
             "use_rag": use_rag,

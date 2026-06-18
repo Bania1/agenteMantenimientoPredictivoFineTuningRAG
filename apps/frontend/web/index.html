@@ -584,7 +584,8 @@
             const extracted = data?.extractor_json;
             if (!extracted) return data?.response || '';
 
-            const english = looksEnglish(data?.response);
+            const assistantTextRaw = String(data?.assistant_text ?? '').trim();
+            const english = looksEnglish(assistantTextRaw || data?.response);
             const appliance = escapeHtml(extracted.aparato || (english ? 'the appliance' : 'el electrodomestico'));
             const symptom = escapeHtml(extracted.sintoma || (english ? 'the reported issue' : 'el problema descrito'));
             const cause = escapeHtml(extracted.causa_probable || (english ? 'Not specified' : 'No especificado'));
@@ -592,14 +593,19 @@
             const severity = Number(extracted.grado_peligrosidad);
             const steps = normalizeAssistantSteps(extracted.pasos_reparacion).slice(0, 5);
 
-            const summaryText = english
-                ? `I detected an issue affecting <strong>${appliance}</strong>: ${symptom}.`
-                : `He detectado un problema en <strong>${appliance}</strong>: ${symptom}.`;
+            const summaryText = assistantTextRaw
+                ? escapeHtml(assistantTextRaw)
+                : (english
+                    ? `I detected an issue affecting ${appliance}: ${symptom}.`
+                    : `He detectado un problema en ${appliance}: ${symptom}.`);
 
-            const errorText = errorCode && errorCode !== 'No especificado' && errorCode !== 'Not specified'
-                ? (english
-                    ? `<p class="m-0 text-sm leading-relaxed text-slate-700">The extracted error code is <strong>${errorCode}</strong>.</p>`
-                    : `<p class="m-0 text-sm leading-relaxed text-slate-700">El codigo extraido es <strong>${errorCode}</strong>.</p>`)
+            const errorCodeSection = errorCode && errorCode !== 'No especificado' && errorCode !== 'Not specified'
+                ? `
+                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Detected code' : 'Codigo detectado'}</div>
+                        <p class="mt-3 text-base leading-relaxed text-slate-900"><strong>${errorCode}</strong></p>
+                    </section>
+                `
                 : '';
 
             const stepsHtml = steps.length
@@ -643,8 +649,8 @@
                     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Case summary' : 'Resumen del caso'}</div>
                         <p class="mt-3 text-sm leading-relaxed text-slate-800">${summaryText}</p>
-                        ${errorText ? `<div class="mt-3">${errorText}</div>` : ''}
                     </section>
+                    ${errorCodeSection}
                     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Likely cause' : 'Causa probable'}</div>
                         <p class="mt-3 text-base leading-relaxed text-slate-900">${cause}</p>
