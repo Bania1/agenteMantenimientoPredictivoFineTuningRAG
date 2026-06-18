@@ -1,4 +1,45 @@
 {
+  "guardrails": {
+    "semantic_implausible_threshold": 0.62,
+    "semantic_margin": 0.08,
+    "plausible_floor": 0.4,
+    "global_plausible_examples": [
+      "El aparato no enciende",
+      "Hace ruido raro",
+      "No calienta bien",
+      "Pierde agua",
+      "Huele a quemado",
+      "Muestra un codigo de error",
+      "No desagua",
+      "Vibra demasiado"
+    ],
+    "global_implausible_examples": [
+      "El electrodomestico camina solo",
+      "El aparato habla como una persona",
+      "El equipo canta",
+      "El electrodomestico llora",
+      "El aparato salta por la cocina",
+      "El equipo recita poemas",
+      "El electrodomestico vuela",
+      "El aparato piensa"
+    ],
+    "global_implausible_phrases": [
+      "camina",
+      "anda sola",
+      "anda solo",
+      "baila",
+      "canta",
+      "habla",
+      "llora",
+      "salta",
+      "recita poemas",
+      "respira",
+      "ladra",
+      "maulla",
+      "vuela",
+      "piensa"
+    ]
+  },
   "devices": {
     "fridge": {
       "aliases": [
@@ -20,6 +61,25 @@
         "spin cycle",
         "grill resistance",
         "magnetron exhausted"
+      ],
+      "rule_based_implausible_phrases": [
+        "gira el plato",
+        "sale disparada"
+      ],
+      "plausible_examples": [
+        "La nevera no enfria la parte de abajo",
+        "El congelador hace mucho hielo",
+        "La nevera pierde frio al cerrar la puerta",
+        "El frigorifico hace un ruido constante",
+        "La nevera gotea por dentro",
+        "El compresor de la nevera no arranca"
+      ],
+      "implausible_examples": [
+        "La nevera camina sola por la cocina",
+        "Mi frigorifico habla cuando lo enciendo",
+        "La nevera vuela",
+        "El congelador canta",
+        "La nevera gira el plato como un microondas"
       ]
     },
     "washing_machine": {
@@ -35,6 +95,26 @@
         "evaporador",
         "freezer",
         "ice maker"
+      ],
+      "rule_based_implausible_phrases": [
+        "camina",
+        "habla",
+        "vuela"
+      ],
+      "plausible_examples": [
+        "La lavadora no desagua al terminar",
+        "La lavadora vibra mucho al centrifugar",
+        "La lavadora pierde agua por abajo",
+        "La lavadora no centrifuga",
+        "La lavadora hace ruido metalico",
+        "La lavadora se desplaza al centrifugar"
+      ],
+      "implausible_examples": [
+        "La lavadora camina sola por la cocina",
+        "Mi lavadora habla cuando empieza el ciclo",
+        "La lavadora vuela",
+        "La lavadora ladra",
+        "La lavadora canta al centrifugar"
       ]
     },
     "microwave": {
@@ -49,6 +129,29 @@
         "compresor",
         "evaporador",
         "freezer"
+      ],
+      "rule_based_implausible_phrases": [
+        "echa agua",
+        "pierde agua",
+        "tira agua",
+        "gotea agua",
+        "camina",
+        "habla"
+      ],
+      "plausible_examples": [
+        "El microondas enciende pero no calienta",
+        "El microondas hace chispas",
+        "El microondas no gira el plato",
+        "El microondas hace ruido pero no calienta",
+        "El microondas huele a quemado",
+        "La puerta del microondas no cierra bien"
+      ],
+      "implausible_examples": [
+        "Mi microondas echa agua",
+        "El microondas pierde agua por debajo",
+        "Mi microondas camina solo",
+        "El microondas habla",
+        "El microondas vuela por la cocina"
       ]
     },
     "dishwasher": {
@@ -63,6 +166,24 @@
         "tambor",
         "freezer",
         "burner"
+      ],
+      "rule_based_implausible_phrases": [
+        "camina",
+        "habla",
+        "vuela"
+      ],
+      "plausible_examples": [
+        "El lavavajillas no desagua",
+        "El lavavajillas deja los platos frios",
+        "El lavavajillas pierde agua",
+        "El lavavajillas no calienta el agua",
+        "El lavavajillas hace ruido al vaciar"
+      ],
+      "implausible_examples": [
+        "El lavavajillas camina solo",
+        "Mi lavavajillas canta",
+        "El lavavajillas vuela",
+        "El lavavajillas habla"
       ]
     },
     "oven": {
@@ -77,6 +198,26 @@
         "drum bearing",
         "compresor frigorifico",
         "ice maker"
+      ],
+      "rule_based_implausible_phrases": [
+        "echa agua",
+        "pierde agua",
+        "camina",
+        "habla",
+        "vuela"
+      ],
+      "plausible_examples": [
+        "El horno no calienta bien",
+        "El horno huele a quemado",
+        "La resistencia del horno no funciona",
+        "El ventilador del horno hace ruido",
+        "El horno no mantiene la temperatura"
+      ],
+      "implausible_examples": [
+        "El horno echa agua",
+        "El horno camina solo",
+        "El horno habla",
+        "El horno vuela"
       ]
     },
     "dryer": {
@@ -91,6 +232,25 @@
         "evaporador",
         "freezer",
         "ice maker"
+      ],
+      "rule_based_implausible_phrases": [
+        "echa agua",
+        "camina",
+        "habla",
+        "vuela"
+      ],
+      "plausible_examples": [
+        "La secadora no seca bien la ropa",
+        "La secadora huele a quemado",
+        "La secadora hace ruido al girar",
+        "La secadora no calienta",
+        "La secadora se para a mitad del ciclo"
+      ],
+      "implausible_examples": [
+        "La secadora echa agua como una manguera",
+        "La secadora camina sola",
+        "La secadora habla",
+        "La secadora vuela"
       ]
     },
     "cooktop": {
@@ -110,6 +270,23 @@
         "tambor",
         "freezer",
         "ice maker"
+      ],
+      "rule_based_implausible_phrases": [
+        "camina",
+        "habla",
+        "vuela"
+      ],
+      "plausible_examples": [
+        "La induccion no detecta la olla",
+        "La vitro no calienta una zona",
+        "La campana no aspira bien",
+        "La campana hace mucho ruido",
+        "La induccion se apaga sola"
+      ],
+      "implausible_examples": [
+        "La vitro camina sola",
+        "La campana habla",
+        "La induccion vuela"
       ]
     },
     "general_appliance": {
@@ -118,7 +295,18 @@
         "electrodoméstico",
         "appliance"
       ],
-      "incompatible_terms": []
+      "incompatible_terms": [],
+      "rule_based_implausible_phrases": [],
+      "plausible_examples": [
+        "El electrodomestico hace ruido",
+        "El aparato no enciende",
+        "El equipo muestra un codigo de error"
+      ],
+      "implausible_examples": [
+        "El electrodomestico camina",
+        "El aparato habla",
+        "El equipo vuela"
+      ]
     }
   }
 }

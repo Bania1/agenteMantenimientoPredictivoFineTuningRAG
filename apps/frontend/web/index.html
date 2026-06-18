@@ -491,6 +491,9 @@
         };
 
         const buildRagDetails = (data) => {
+            if (data?.plausibility_rejected) {
+                return '';
+            }
             if (!data?.use_rag) {
                 return buildDetailToggle(
                     'RAG desactivado',
@@ -516,6 +519,22 @@
                 'RAG activado',
                 `<p class="mb-3">Se han recuperado averias similares desde Milvus Lite.</p><ul class="m-0 ml-5">${items}</ul>`,
                 'emerald'
+            );
+        };
+
+        const buildKnowledgeSourceDetails = (data) => {
+            if (data?.knowledge_source !== 'generic_llm') {
+                return '';
+            }
+            const modelLabel = escapeHtml(data?.knowledge_model_label || 'modelo no especificado');
+            const reason = String(data?.knowledge_source_reason || '');
+            const body = reason === 'rag_without_hits'
+                ? `<p class="m-0">No se han encontrado casos compatibles en Milvus Lite. La respuesta se apoya en conocimiento general del modelo <strong>${modelLabel}</strong>.</p>`
+                : `<p class="m-0">La respuesta se ha generado sin usar RAG y se apoya en conocimiento general del modelo <strong>${modelLabel}</strong>.</p>`;
+            return buildDetailToggle(
+                'Fuente de conocimiento',
+                body,
+                'slate'
             );
         };
 
@@ -689,6 +708,7 @@
                     <div class="json-viewer max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-4 shadow-inner">
                         <pre class="m-0 text-[11px] text-slate-100 sm:text-xs">${prettyJson}</pre>
                     </div>
+                    ${buildKnowledgeSourceDetails(data)}
                     ${buildRagDetails(data)}
                 </div>
             `;
@@ -703,6 +723,7 @@
                 ? buildAssistantStructuredResponse(data)
                 : data.response;
             const details = [
+                buildKnowledgeSourceDetails(data),
                 buildRagDetails(data),
                 data?.mode === 'assistant' ? buildExtractorJsonDetails(data) : ''
             ].filter(Boolean).join('');

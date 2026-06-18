@@ -8,6 +8,7 @@ import os
 import re
 import time
 import unicodedata
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -128,6 +129,10 @@ def load_domain_catalog() -> dict[str, Any]:
 
 DOMAIN_CATALOG = load_domain_catalog()
 DEVICE_CATALOG = DOMAIN_CATALOG.get("devices", {})
+GUARDRAIL_CONFIG = DOMAIN_CATALOG.get("guardrails", {})
+SEMANTIC_IMPLAUSIBLE_THRESHOLD = float(GUARDRAIL_CONFIG.get("semantic_implausible_threshold", 0.62))
+SEMANTIC_MARGIN = float(GUARDRAIL_CONFIG.get("semantic_margin", 0.08))
+PLAUSIBLE_FLOOR = float(GUARDRAIL_CONFIG.get("plausible_floor", 0.40))
 
 
 def detect_output_language(user_message: str) -> str:
@@ -164,6 +169,74 @@ DOMAIN_KEYWORDS = get_domain_keywords()
 def is_in_domain(user_message: str) -> bool:
     lowered = user_message.lower()
     return any(keyword in lowered for keyword in DOMAIN_KEYWORDS)
+
+
+def get_device_guardrail_config(categoria: str | None) -> dict[str, Any]:
+    if not categoria:
+        return {}
+    return DEVICE_CATALOG.get(categoria, {})
+
+
+def get_guardrail_examples(categoria: str | None, key: str) -> list[str]:
+    device_data = get_device_guardrail_config(categoria)
+    values = device_data.get(key, [])
+    return [str(value).strip() for value in values if str(value).strip()]
+
+
+def contains_configured_phrase(text: str, phrases: list[str]) -> bool:
+    lowered = norm(text)
+    return any(norm(phrase) in lowered for phrase in phrases)
+
+
+@lru_cache(maxsize=512)
+def get_cached_embedding(text: str) -> tuple[float, ...]:
+    return tuple(float(value) for value in hash_embedding(text))
+
+
+def cosine_similarity(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    if not left or not right:
+        return 0.0
+    return float(sum(a * b for a, b in zip(left, right)))
+
+
+def get_max_semantic_similarity(query: str, examples: list[str]) -> float:
+    if not examples:
+        return 0.0
+    query_vec = get_cached_embedding(query)
+    return max(cosine_similarity(query_vec, get_cached_embedding(example)) for example in examples)
+
+
+def get_semantic_plausibility_scores(user_message: str, categoria: str | None) -> dict[str, float]:
+    plausible_examples = [str(value) for value in GUARDRAIL_CONFIG.get("global_plausible_examples", [])]
+    plausible_examples.extend(get_guardrail_examples(categoria, "plausible_examples"))
+    implausible_examples = [str(value) for value in GUARDRAIL_CONFIG.get("global_implausible_examples", [])]
+    implausible_examples.extend(get_guardrail_examples(categoria, "implausible_examples"))
+    plausible_score = get_max_semantic_similarity(user_message, plausible_examples)
+    implausible_score = get_max_semantic_similarity(user_message, implausible_examples)
+    return {
+        "plausible_score": round(plausible_score, 4),
+        "implausible_score": round(implausible_score, 4),
+    }
+
+
+def detect_implausible_query_reason(user_message: str, categoria: str | None) -> str | None:
+    global_phrases = [str(value) for value in GUARDRAIL_CONFIG.get("global_implausible_phrases", [])]
+    category_phrases = get_guardrail_examples(categoria, "rule_based_implausible_phrases")
+    if contains_configured_phrase(user_message, global_phrases):
+        return "El sintoma describe un comportamiento imposible o no tecnico para un electrodomestico."
+    if contains_configured_phrase(user_message, category_phrases):
+        return "El sintoma no encaja con una averia plausible para ese tipo de aparato."
+
+    scores = get_semantic_plausibility_scores(user_message, categoria)
+    plausible_score = scores["plausible_score"]
+    implausible_score = scores["implausible_score"]
+    if (
+        implausible_score >= SEMANTIC_IMPLAUSIBLE_THRESHOLD
+        and implausible_score >= plausible_score + SEMANTIC_MARGIN
+        and plausible_score <= PLAUSIBLE_FLOOR
+    ):
+        return "El sintoma no encaja con una averia plausible para ese tipo de aparato."
+    return None
 
 
 def detect_device_category(*texts: str) -> str | None:
@@ -721,6 +794,21 @@ def build_consistency_notice(issues: list[str]) -> str:
     )
 
 
+def build_implausible_query_response(user_message: str, reason: str) -> str:
+    language = detect_output_language(user_message)
+    if language == "English":
+        return (
+            "<strong>Query not plausible for this domain.</strong><br>"
+            f"{html.escape(reason)} "
+            "Please reformulate the issue using an observable technical symptom, for example noise, no heating, no draining, bad smell, sparks, leaks or an error code."
+        )
+    return (
+        "<strong>Consulta no plausible para este dominio.</strong><br>"
+        f"{html.escape(reason)} "
+        "Reformula la consulta describiendo un sintoma tecnico observable, por ejemplo ruido, no calienta, no desagua, olor a quemado, chispas, fugas o un codigo de error."
+    )
+
+
 def build_severity_warning(user_message: str, extracted: dict[str, Any]) -> str:
     severity = extracted.get("grado_peligrosidad")
     if severity != 1:
@@ -759,6 +847,31 @@ def build_rag_notice(rag_hits: list[dict[str, Any]]) -> str:
         f"<ul style='margin:8px 0 0 18px;'>{elementos}</ul>"
         "</div>"
     )
+
+
+def build_knowledge_source_metadata(
+    mode: str,
+    use_rag: bool,
+    rag_hits: list[dict[str, Any]],
+    assistant_model_used: bool,
+) -> dict[str, str]:
+    if use_rag and rag_hits:
+        return {
+            "knowledge_source": "rag",
+            "knowledge_source_reason": "rag_hit",
+            "knowledge_model_label": f"{EXTRACTOR_MODEL} + {RESPONSE_MODEL}" if mode == "assistant" and assistant_model_used else EXTRACTOR_MODEL,
+        }
+    if use_rag and not rag_hits:
+        return {
+            "knowledge_source": "generic_llm",
+            "knowledge_source_reason": "rag_without_hits",
+            "knowledge_model_label": f"{EXTRACTOR_MODEL} + {RESPONSE_MODEL}" if mode == "assistant" and assistant_model_used else EXTRACTOR_MODEL,
+        }
+    return {
+        "knowledge_source": "generic_llm",
+        "knowledge_source_reason": "rag_disabled",
+        "knowledge_model_label": f"{EXTRACTOR_MODEL} + {RESPONSE_MODEL}" if mode == "assistant" and assistant_model_used else EXTRACTOR_MODEL,
+    }
 
 
 def build_response_section(title: str, body: str) -> str:
@@ -1281,6 +1394,24 @@ def chat() -> tuple[Any, int] | Any:
         )
 
     aparato_hint = detect_device_category(message)
+    plausibility_scores = get_semantic_plausibility_scores(message, aparato_hint)
+    plausibility_reason = detect_implausible_query_reason(message, aparato_hint)
+    if plausibility_reason:
+        return jsonify(
+            {
+                "response": build_implausible_query_response(message, plausibility_reason),
+                "mode": mode,
+                "rag_used": False,
+                "rag_hits": [],
+                "use_rag": use_rag,
+                "plausibility_rejected": True,
+                "plausibility_scores": plausibility_scores,
+                "plausibility_reason": plausibility_reason,
+                "knowledge_source": "guardrail",
+                "knowledge_source_reason": "implausible_query",
+            }
+        )
+
     rag_hits = buscar_fragmentos_rag(message, aparato_hint=aparato_hint, top_k=RAG_TOP_K) if use_rag else []
     contexto_rag = construir_contexto_rag(rag_hits, message)
 
@@ -1309,18 +1440,41 @@ def chat() -> tuple[Any, int] | Any:
             response_html = (
                 f"<div>{html.escape(assistant_text).replace(chr(10), '<br>')}</div>"
             )
-            return jsonify({"response": response_html, "mode": mode, "rag_used": False, "rag_hits": [], "use_rag": use_rag})
+            return jsonify(
+                {
+                    "response": response_html,
+                    "mode": mode,
+                    "rag_used": False,
+                    "rag_hits": [],
+                    "use_rag": use_rag,
+                    "plausibility_rejected": False,
+                    "plausibility_scores": plausibility_scores,
+                    **build_knowledge_source_metadata(mode, use_rag, [], assistant_model_used=False),
+                }
+            )
 
         fallback = (
             "<strong>El extractor no devolvio un JSON valido.</strong><br>"
             "Salida bruta del modelo para diagnostico:<br><br>"
             f"<pre>{html.escape(raw_response)}</pre>"
         )
-        return jsonify({"response": fallback, "mode": mode, "rag_used": False, "rag_hits": [], "use_rag": use_rag})
+        return jsonify(
+            {
+                "response": fallback,
+                "mode": mode,
+                "rag_used": False,
+                "rag_hits": [],
+                "use_rag": use_rag,
+                "plausibility_rejected": False,
+                "plausibility_scores": plausibility_scores,
+                **build_knowledge_source_metadata(mode, use_rag, [], assistant_model_used=False),
+            }
+        )
 
     issues = assess_extraction_consistency(message, extracted)
 
     if mode == "extractor":
+        knowledge_meta = build_knowledge_source_metadata(mode, use_rag, rag_hits, assistant_model_used=False)
         return jsonify(
             {
                 "response": render_json_response(message, extracted, issues, rag_hits),
@@ -1330,6 +1484,9 @@ def chat() -> tuple[Any, int] | Any:
                 "extractor_json": extracted,
                 "extractor_elapsed_seconds": round(extractor_elapsed, 2),
                 "use_rag": use_rag,
+                "plausibility_rejected": False,
+                "plausibility_scores": plausibility_scores,
+                **knowledge_meta,
             }
         )
 
@@ -1362,6 +1519,7 @@ def chat() -> tuple[Any, int] | Any:
         f"{build_consistency_notice(issues)}"
         f"{build_severity_warning(message, extracted)}"
     )
+    knowledge_meta = build_knowledge_source_metadata(mode, use_rag, rag_hits, assistant_model_used=bool(assistant_text))
     return jsonify(
         {
             "response": response_html,
@@ -1376,6 +1534,9 @@ def chat() -> tuple[Any, int] | Any:
             "rag_used": bool(rag_hits),
             "rag_hits": rag_hits,
             "use_rag": use_rag,
+            "plausibility_rejected": False,
+            "plausibility_scores": plausibility_scores,
+            **knowledge_meta,
         }
     )
 
