@@ -332,18 +332,24 @@
             </div>
 
             <script>
-                const exactMatchQuery = "Lavadora Samsung WW90T534DTW no evacua el agua despues del lavado y muestra error 5C";
+                const demoPromptExacto = "El microondas Beko hace ruido pero no calienta";
+                const demoPromptSemantico = "El microondas enciende pero no calienta la comida";
+                const demoPromptEspecifico = "El microondas Beko enciende el grill pero no calienta en modo microondas";
+                const demoPromptGuardrail = "Mi microondas puede ver";
             </script>
             <!-- Sugerencias para Presentación -->
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="fillInput(exactMatchQuery)" title="Demuestra una coincidencia casi perfecta (distancia 0.04) usando el registro original exacto de la base de datos." class="text-xs bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 px-3 py-1.5 rounded-full transition-colors border border-emerald-200 font-medium shadow-sm">
-                    🌟 Caso Perfecto (Distancia 0.04)
+                <button onclick="fillInput(demoPromptExacto)" title="Caso de microondas con marca que suele recuperar contexto muy relevante desde Milvus." class="text-xs bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 px-3 py-1.5 rounded-full transition-colors border border-emerald-200 font-medium shadow-sm">
+                    🌟 Microondas Beko no calienta
                 </button>
-                <button onclick="fillInput('El microondas enciende pero no calienta la comida')" title="Demuestra deducción semántica RAG sin marca específica" class="text-xs bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-700 px-3 py-1.5 rounded-full transition-colors border border-blue-200 font-medium shadow-sm">
-                    👍 Caso Bueno (Microondas genérico)
+                <button onclick="fillInput(demoPromptSemantico)" title="Demuestra recuperación semántica sin necesidad de indicar marca." class="text-xs bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-700 px-3 py-1.5 rounded-full transition-colors border border-blue-200 font-medium shadow-sm">
+                    👍 Microondas genérico
                 </button>
-                <button onclick="fillInput('Mi coche híbrido no arranca por las mañanas y el motor hace un ruido metálico')" title="Demuestra la red de seguridad y control de alucinaciones" class="text-xs bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-700 px-3 py-1.5 rounded-full transition-colors border border-rose-200 font-medium shadow-sm">
-                    🛡️ Fuera de Dominio (Coche Híbrido)
+                <button onclick="fillInput(demoPromptEspecifico)" title="Caso más concreto de microondas Beko para enseñar recuperación con síntomas técnicos más específicos." class="text-xs bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-700 px-3 py-1.5 rounded-full transition-colors border border-amber-200 font-medium shadow-sm">
+                    🔎 Grill enciende, microondas no
+                </button>
+                <button onclick="fillInput(demoPromptGuardrail)" title="Demuestra el guardrail ante una consulta absurda sin salir del dominio de microondas." class="text-xs bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-700 px-3 py-1.5 rounded-full transition-colors border border-rose-200 font-medium shadow-sm">
+                    🛡️ Guardrail microondas
                 </button>
             </div>
 
