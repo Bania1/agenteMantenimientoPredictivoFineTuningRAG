@@ -78,18 +78,6 @@
       "auto_id": false,
       "default_value": null,
       "dim": null,
-      "dtype": "varchar",
-      "element_type": null,
-      "is_primary": false,
-      "max_capacity": null,
-      "max_length": 1024,
-      "name": "sintoma",
-      "nullable": false
-    },
-    {
-      "auto_id": false,
-      "default_value": null,
-      "dim": null,
       "dtype": "int64",
       "element_type": null,
       "is_primary": false,

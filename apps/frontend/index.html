@@ -332,24 +332,18 @@
             </div>
 
             <script>
-                const demoPromptExacto = "El microondas Beko hace ruido pero no calienta";
-                const demoPromptSemantico = "El microondas enciende pero no calienta la comida";
-                const demoPromptEspecifico = "El microondas Beko enciende el grill pero no calienta en modo microondas";
-                const demoPromptGuardrail = "Mi microondas puede ver";
+                const exactMatchQuery = "Lavadora Samsung WW90T534DTW La lavadora no evacua el agua despues del lavado y muestra error 5C 5C Filtro de la bomba de desague obstruido o bomba de evacuacion rota ['Abrir la tapa de registro abajo a la derecha.', 'Colocar un recipiente y vaciar el agua por el tubo auxiliar.', 'Desenroscar el tapon del filtro.', 'Retirar monedas, pelusas u otros objetos.', 'Comprobar que las aspas de la bomba giran con libertad.']";
             </script>
             <!-- Sugerencias para Presentación -->
             <div class="flex flex-wrap gap-2 mb-4">
-                <button onclick="fillInput(demoPromptExacto)" title="Caso de microondas con marca que suele recuperar contexto muy relevante desde Milvus." class="text-xs bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 px-3 py-1.5 rounded-full transition-colors border border-emerald-200 font-medium shadow-sm">
-                    🌟 Microondas Beko no calienta
+                <button onclick="fillInput(exactMatchQuery)" title="Demuestra una coincidencia casi perfecta (distancia 0.04) usando el registro original exacto de la base de datos." class="text-xs bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-700 px-3 py-1.5 rounded-full transition-colors border border-emerald-200 font-medium shadow-sm">
+                    🌟 Caso Perfecto (Similitud 96%)
                 </button>
-                <button onclick="fillInput(demoPromptSemantico)" title="Demuestra recuperación semántica sin necesidad de indicar marca." class="text-xs bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-700 px-3 py-1.5 rounded-full transition-colors border border-blue-200 font-medium shadow-sm">
-                    👍 Microondas genérico
+                <button onclick="fillInput('El microondas enciende pero no calienta la comida')" title="Demuestra deducción semántica RAG sin marca específica" class="text-xs bg-blue-50 hover:bg-blue-500 hover:text-white text-blue-700 px-3 py-1.5 rounded-full transition-colors border border-blue-200 font-medium shadow-sm">
+                    👍 Caso Bueno (Microondas genérico)
                 </button>
-                <button onclick="fillInput(demoPromptEspecifico)" title="Caso más concreto de microondas Beko para enseñar recuperación con síntomas técnicos más específicos." class="text-xs bg-amber-50 hover:bg-amber-500 hover:text-white text-amber-700 px-3 py-1.5 rounded-full transition-colors border border-amber-200 font-medium shadow-sm">
-                    🔎 Grill enciende, microondas no
-                </button>
-                <button onclick="fillInput(demoPromptGuardrail)" title="Demuestra el guardrail ante una consulta absurda sin salir del dominio de microondas." class="text-xs bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-700 px-3 py-1.5 rounded-full transition-colors border border-rose-200 font-medium shadow-sm">
-                    🛡️ Guardrail microondas
+                <button onclick="fillInput('Mi coche híbrido no arranca por las mañanas y el motor hace un ruido metálico')" title="Demuestra la red de seguridad y control de alucinaciones" class="text-xs bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-700 px-3 py-1.5 rounded-full transition-colors border border-rose-200 font-medium shadow-sm">
+                    🛡️ Fuera de Dominio (Coche Híbrido)
                 </button>
             </div>
 
@@ -497,9 +491,6 @@
         };
 
         const buildRagDetails = (data) => {
-            if (data?.plausibility_rejected) {
-                return '';
-            }
             if (!data?.use_rag) {
                 return buildDetailToggle(
                     'RAG desactivado',
@@ -517,7 +508,7 @@
             const items = data.rag_hits.slice(0, 5).map((hit) => `
                 <li class="mb-2">
                     <div class="font-medium">${escapeHtml(hit.aparato || 'Caso recuperado')}</div>
-                    <div class="text-xs text-emerald-700">Distancia coseno: ${escapeHtml(hit.score ?? '')} · menor es mejor</div>
+                    <div class="text-xs text-emerald-700">Similitud: ${escapeHtml(hit.score ?? '')}</div>
                     <div class="mt-1 text-xs text-slate-700">${escapeHtml(hit.causa_probable || 'Sin causa registrada')}</div>
                 </li>
             `).join('');
@@ -525,22 +516,6 @@
                 'RAG activado',
                 `<p class="mb-3">Se han recuperado averias similares desde Milvus Lite.</p><ul class="m-0 ml-5">${items}</ul>`,
                 'emerald'
-            );
-        };
-
-        const buildKnowledgeSourceDetails = (data) => {
-            if (data?.knowledge_source !== 'generic_llm') {
-                return '';
-            }
-            const modelLabel = escapeHtml(data?.knowledge_model_label || 'modelo no especificado');
-            const reason = String(data?.knowledge_source_reason || '');
-            const body = reason === 'rag_without_hits'
-                ? `<p class="m-0">No se han encontrado casos compatibles en Milvus Lite. La respuesta se apoya en conocimiento general del modelo <strong>${modelLabel}</strong>.</p>`
-                : `<p class="m-0">La respuesta se ha generado sin usar RAG y se apoya en conocimiento general del modelo <strong>${modelLabel}</strong>.</p>`;
-            return buildDetailToggle(
-                'Fuente de conocimiento',
-                body,
-                'slate'
             );
         };
 
@@ -563,41 +538,14 @@
         };
 
         const normalizeAssistantSteps = (steps) => {
-            if (steps && typeof steps === 'object' && !Array.isArray(steps)) {
-                const entries = Object.entries(steps);
-                const flattened = [];
-                for (const [rawKey, rawValue] of entries) {
-                    const keyText = String(rawKey ?? '').trim();
-                    const valueText = String(rawValue ?? '').trim();
-                    if (keyText) flattened.push(keyText);
-                    if (valueText && valueText !== keyText) flattened.push(valueText);
-                }
-                return flattened.filter(Boolean);
-            }
-
             if (Array.isArray(steps)) {
-                const normalized = [];
-                for (const step of steps) {
-                    if (step && typeof step === 'object') {
-                        normalized.push(...normalizeAssistantSteps(step));
-                        continue;
-                    }
-                    const stepText = String(step ?? '').trim();
-                    if (stepText) normalized.push(stepText);
-                }
-                return normalized;
+                return steps
+                    .map((step) => String(step ?? '').trim())
+                    .filter(Boolean);
             }
 
             const raw = String(steps ?? '').trim();
             if (!raw) return [];
-
-            if (raw.startsWith('{') && raw.endsWith('}')) {
-                try {
-                    return normalizeAssistantSteps(JSON.parse(raw));
-                } catch (_) {
-                    // Si no se puede parsear, seguimos con el fallback textual.
-                }
-            }
 
             return raw
                 .split(/(?:\n+|\r+|;\s+|\.\s+(?=[A-ZÁÉÍÓÚÑ0-9]))/)
@@ -609,8 +557,7 @@
             const extracted = data?.extractor_json;
             if (!extracted) return data?.response || '';
 
-            const assistantTextRaw = String(data?.assistant_text ?? '').trim();
-            const english = looksEnglish(assistantTextRaw || data?.response);
+            const english = looksEnglish(data?.response);
             const appliance = escapeHtml(extracted.aparato || (english ? 'the appliance' : 'el electrodomestico'));
             const symptom = escapeHtml(extracted.sintoma || (english ? 'the reported issue' : 'el problema descrito'));
             const cause = escapeHtml(extracted.causa_probable || (english ? 'Not specified' : 'No especificado'));
@@ -618,19 +565,14 @@
             const severity = Number(extracted.grado_peligrosidad);
             const steps = normalizeAssistantSteps(extracted.pasos_reparacion).slice(0, 5);
 
-            const summaryText = assistantTextRaw
-                ? escapeHtml(assistantTextRaw)
-                : (english
-                    ? `I detected an issue affecting ${appliance}: ${symptom}.`
-                    : `He detectado un problema en ${appliance}: ${symptom}.`);
+            const summaryText = english
+                ? `I detected an issue affecting <strong>${appliance}</strong>: ${symptom}.`
+                : `He detectado un problema en <strong>${appliance}</strong>: ${symptom}.`;
 
-            const errorCodeSection = errorCode && errorCode !== 'No especificado' && errorCode !== 'Not specified'
-                ? `
-                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                        <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Detected code' : 'Codigo detectado'}</div>
-                        <p class="mt-3 text-base leading-relaxed text-slate-900"><strong>${errorCode}</strong></p>
-                    </section>
-                `
+            const errorText = errorCode && errorCode !== 'No especificado' && errorCode !== 'Not specified'
+                ? (english
+                    ? `<p class="m-0 text-sm leading-relaxed text-slate-700">The extracted error code is <strong>${errorCode}</strong>.</p>`
+                    : `<p class="m-0 text-sm leading-relaxed text-slate-700">El codigo extraido es <strong>${errorCode}</strong>.</p>`)
                 : '';
 
             const stepsHtml = steps.length
@@ -674,8 +616,8 @@
                     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Case summary' : 'Resumen del caso'}</div>
                         <p class="mt-3 text-sm leading-relaxed text-slate-800">${summaryText}</p>
+                        ${errorText ? `<div class="mt-3">${errorText}</div>` : ''}
                     </section>
-                    ${errorCodeSection}
                     <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">${english ? 'Likely cause' : 'Causa probable'}</div>
                         <p class="mt-3 text-base leading-relaxed text-slate-900">${cause}</p>
@@ -714,7 +656,6 @@
                     <div class="json-viewer max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 p-4 shadow-inner">
                         <pre class="m-0 text-[11px] text-slate-100 sm:text-xs">${prettyJson}</pre>
                     </div>
-                    ${buildKnowledgeSourceDetails(data)}
                     ${buildRagDetails(data)}
                 </div>
             `;
@@ -729,7 +670,6 @@
                 ? buildAssistantStructuredResponse(data)
                 : data.response;
             const details = [
-                buildKnowledgeSourceDetails(data),
                 buildRagDetails(data),
                 data?.mode === 'assistant' ? buildExtractorJsonDetails(data) : ''
             ].filter(Boolean).join('');

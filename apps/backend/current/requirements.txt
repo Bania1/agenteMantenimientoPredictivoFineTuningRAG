@@ -1,2 +1,5 @@
 flask==3.0.3
 requests==2.32.4
+pymilvus==3.0.0
+milvus-lite==3.0
+sentence-transformers==5.1.0

@@ -1,12 +1,2 @@
+data/milvus-lite/reparaciones-lite/milvus.db/collections/reparaciones/partitions/_default/indexes/
 __pycache__/
-*.pyc
-.venv/
-venv/
-.env
-.env.*
-.DS_Store
-Thumbs.db
-logs/
-*.log
-models/
-*.gguf

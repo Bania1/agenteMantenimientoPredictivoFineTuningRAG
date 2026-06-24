@@ -1,23 +1,23 @@
-# HTTP Endpoints And Ports
+# Endpoints HTTP y puertos
 
-## Public Entry Points
-- `http://31.220.95.11/` -> frontend served by nginx in Docker on port `80`
-- `ssh angel@31.220.95.11` -> SSH on port `22`
+## Puntos de entrada publicos
+- `http://31.220.95.11/` -> frontend servido por `nginx` en Docker sobre el puerto `80`
+- `ssh angel@31.220.95.11` -> acceso SSH sobre el puerto `22`
 
-## Current Backend Endpoints
-- `POST /api/chat` -> current Flask backend behind nginx proxy
-- `GET /health` on backend service -> `http://127.0.0.1:5000/health`
+## Endpoints del backend actual
+- `POST /api/chat` -> endpoint principal del backend Flask accesible a traves del proxy de `nginx`
+- `GET /health` -> comprobacion de estado del backend en `http://127.0.0.1:5000/health`
 
-## Candidate RAG Endpoints Found In Code
-- `POST /chat` in `apps/rag/api/rag_server.py`
-- `GET /health` in `apps/rag/api/rag_server.py`
-- `GET /buscar` in `apps/rag/api/rag_server.py`
+## Endpoints RAG encontrados en el codigo
+- `POST /chat` en `apps/rag/api/rag_server.py`
+- `GET /health` en `apps/rag/api/rag_server.py`
+- `GET /buscar` en `apps/rag/api/rag_server.py`
 
-## Current Port Exposure
-- `80/tcp` public via Docker nginx
-- `22/tcp` public via SSH
-- `5000/tcp` public directly from Flask backend
-- `11434/tcp` local only for Ollama
+## Exposicion actual de puertos
+- `80/tcp` publico por Docker + `nginx`
+- `22/tcp` publico por SSH
+- `5000/tcp` expuesto directamente por el backend Flask
+- `11434/tcp` solo en local para `Ollama`
 
-## Recommendation
-Restrict backend port `5000` to localhost once the repo-based deployment path is validated.
+## Recomendacion
+Cuando la migracion al repositorio quede validada, conviene restringir el puerto `5000` a `127.0.0.1` para que el acceso publico pase unicamente por `nginx`.

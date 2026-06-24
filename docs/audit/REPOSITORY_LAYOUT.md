@@ -1,15 +1,15 @@
-# Repository Layout
+# Estructura del repositorio
 
-- `apps/frontend/web` -> active frontend assets
-- `apps/backend/current` -> backend currently serving production traffic
-- `apps/backend/candidates` -> backend variants not yet promoted
-- `apps/rag/api` -> standalone RAG API code found on server
-- `apps/rag/indexers` -> scripts to create/update vector data
-- `config/domain` -> shared domain classification rules
-- `data/milvus-lite` -> local vector store snapshot used by backend candidate
-- `data/rag-samples` -> sample datasets and auxiliary vector stores from coworker work
-- `infra/nginx` -> nginx runtime config
-- `infra/docker/frontend` -> compose file for frontend container
-- `infra/systemd` -> systemd unit definitions
-- `archive/home-angel` -> preserved copies of live files and original home artifacts
-- `docs` -> server audit, path maps, architecture decisions
+- `apps/frontend/web` -> assets del frontend activo
+- `apps/backend/current` -> backend principal que debe quedar como fuente de verdad
+- `apps/backend/candidates` -> variantes o experimentos que aun no se han promocionado
+- `apps/rag/api` -> implementacion alternativa del servidor RAG encontrada en el servidor
+- `apps/rag/indexers` -> scripts para construir o actualizar la base vectorial
+- `config/domain` -> reglas compartidas del dominio de electrodomesticos
+- `data/milvus-lite` -> instantanea local de la base vectorial usada para RAG
+- `data/rag-samples` -> datasets y artefactos auxiliares del trabajo previo
+- `infra/nginx` -> configuracion de `nginx`
+- `infra/docker/frontend` -> `docker-compose` del frontend
+- `infra/systemd` -> unidades `systemd`
+- `archive/home-angel` -> copia de rutas y ficheros originales del servidor
+- `docs` -> auditorias, decisiones de arquitectura y guias de migracion

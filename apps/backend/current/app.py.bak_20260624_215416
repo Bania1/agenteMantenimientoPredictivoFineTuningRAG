@@ -39,8 +39,8 @@ REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "600"))
 DEFAULT_MODE = os.getenv("DEFAULT_MODE", "assistant")
 OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "6h")
 EXTRACTOR_TIMEOUT = int(os.getenv("EXTRACTOR_TIMEOUT", "180"))
-ASSISTANT_TIMEOUT = int(os.getenv("ASSISTANT_TIMEOUT", "12"))
-ASSISTANT_SKIP_EXTRACTOR_SECONDS = float(os.getenv("ASSISTANT_SKIP_EXTRACTOR_SECONDS", "8"))
+ASSISTANT_TIMEOUT = int(os.getenv("ASSISTANT_TIMEOUT", "20"))
+ASSISTANT_SKIP_EXTRACTOR_SECONDS = float(os.getenv("ASSISTANT_SKIP_EXTRACTOR_SECONDS", "14"))
 ASSISTANT_SKIP_LOAD_RATIO = float(os.getenv("ASSISTANT_SKIP_LOAD_RATIO", "0.9"))
 
 app = Flask(__name__)
@@ -1096,15 +1096,6 @@ def should_use_rag_anchor(user_message: str, extracted: dict[str, Any], rag_hits
     return False
 
 
-def normalize_steps_for_json(value: Any) -> list[str] | str:
-    normalized = normalize_steps_value(value)
-    if isinstance(normalized, list):
-        return normalized or "No especificado"
-    if isinstance(normalized, str) and normalized != "No especificado":
-        return [normalized]
-    return "No especificado"
-
-
 def build_extraction_from_rag_hit(user_message: str, hit: dict[str, Any]) -> dict[str, Any]:
     return fill_missing_fields(
         {
@@ -1112,7 +1103,7 @@ def build_extraction_from_rag_hit(user_message: str, hit: dict[str, Any]) -> dic
             "sintoma": clean_field(hit.get("sintoma")) or clean_field(user_message),
             "codigo_error": clean_field(hit.get("codigo_error")) or "No especificado",
             "causa_probable": clean_field(hit.get("causa_probable")) or "No especificado",
-            "pasos_reparacion": normalize_steps_for_json(hit.get("pasos_reparacion")),
+            "pasos_reparacion": normalize_steps_value(hit.get("pasos_reparacion")),
             "porcentaje_certeza": hit.get("porcentaje_certeza", "No especificado"),
             "grado_peligrosidad": hit.get("grado_peligrosidad", "No especificado"),
         }
@@ -1147,18 +1138,12 @@ def repair_extraction_with_rag(user_message: str, extracted: dict[str, Any], rag
     top_hit = rag_hits[0]
     repaired["aparato"] = sanitize_appliance_name(top_hit.get("aparato", repaired.get("aparato", "")), user_message)
     repaired["causa_probable"] = clean_field(top_hit.get("causa_probable")) or repaired.get("causa_probable", "No especificado")
-    repaired["pasos_reparacion"] = normalize_steps_for_json(top_hit.get("pasos_reparacion"))
+    repaired["pasos_reparacion"] = normalize_steps_value(top_hit.get("pasos_reparacion"))
 
     hit_code = clean_field(top_hit.get("codigo_error"))
     if hit_code and hit_code != "No especificado":
         repaired["codigo_error"] = hit_code
 
-    top_hit_symptom = clean_field(top_hit.get("sintoma"))
-    current_symptom = str(repaired.get("sintoma", ""))
-    current_ratio = field_overlap_ratio(user_message, current_symptom)
-    top_hit_ratio = field_overlap_ratio(user_message, top_hit_symptom)
-    if top_hit_symptom and top_hit_ratio >= current_ratio + 0.1:
-        repaired["sintoma"] = top_hit_symptom
     if is_symptom_low_overlap(user_message, str(repaired.get("sintoma", ""))):
         repaired["sintoma"] = clean_field(user_message)
 
@@ -1353,24 +1338,6 @@ def render_assistant_response_html(
     )
 
 
-def build_compact_assistant_rag_context(user_message: str, rag_hits: list[dict[str, Any]]) -> str:
-    if not rag_hits:
-        return ""
-    top_hit = rag_hits[0]
-    appliance = sanitize_appliance_name(str(top_hit.get("aparato", "")), user_message)
-    symptom = clean_field(top_hit.get("sintoma")) or "No especificado"
-    cause = clean_field(top_hit.get("causa_probable")) or "No especificado"
-    error_code = clean_field(top_hit.get("codigo_error")) or "No especificado"
-    score = top_hit.get("score", "No especificado")
-    return (
-        f"Aparato: {appliance}\n"
-        f"Sintoma: {symptom}\n"
-        f"Causa probable: {cause}\n"
-        f"Codigo de error: {error_code}\n"
-        f"Distancia coseno: {score}"
-    )
-
-
 def call_ollama_generate(model: str, prompt: str, num_predict: int = 350, timeout: int | None = None) -> str:
     payload = {
         "model": model,
@@ -1393,22 +1360,9 @@ def call_ollama_generate(model: str, prompt: str, num_predict: int = 350, timeou
     return str(data.get("response", ""))
 
 
-def should_skip_assistant_model(
-    extractor_elapsed: float,
-    extracted: dict[str, Any],
-    rag_hits: list[dict[str, Any]],
-    issues: list[str],
-) -> tuple[bool, str]:
+def should_skip_assistant_model(extractor_elapsed: float) -> tuple[bool, str]:
     if extractor_elapsed >= ASSISTANT_SKIP_EXTRACTOR_SECONDS:
         return True, f"extractor_slow:{extractor_elapsed:.2f}s"
-    if rag_hits and not issues:
-        extracted_has_core_fields = all(
-            clean_field(extracted.get(field))
-            for field in ("aparato", "sintoma", "causa_probable")
-        )
-        extracted_has_steps = bool(normalize_steps(extracted.get("pasos_reparacion")))
-        if extracted_has_core_fields and extracted_has_steps:
-            return True, "structured_response_ready"
     try:
         load1, _, _ = os.getloadavg()
         cpu_count = os.cpu_count() or 1
@@ -1466,23 +1420,14 @@ def build_assistant_prompt(
     user_message: str,
     extracted: dict[str, Any],
     issues: list[str],
-    rag_hits: list[dict[str, Any]] | None = None,
+    contexto_rag: str = "",
 ) -> str:
-    compact_extracted = {
-        "aparato": extracted.get("aparato", "No especificado"),
-        "sintoma": extracted.get("sintoma", "No especificado"),
-        "codigo_error": extracted.get("codigo_error", "No especificado"),
-        "causa_probable": extracted.get("causa_probable", "No especificado"),
-        "pasos_reparacion": normalize_steps(extracted.get("pasos_reparacion"))[:3],
-        "grado_peligrosidad": extracted.get("grado_peligrosidad", "No especificado"),
-    }
-    extracted_json = json.dumps(compact_extracted, ensure_ascii=False, indent=2)
+    extracted_json = json.dumps(extracted, ensure_ascii=False, indent=2)
     target_language = detect_output_language(user_message)
     issues_block = "\n".join(f"- {issue}" for issue in issues) or "- No se han detectado incoherencias."
     rag_block = ""
-    compact_rag_context = build_compact_assistant_rag_context(user_message, rag_hits or [])
-    if compact_rag_context:
-        rag_block = f"\n[TOP_RAG_HIT]\n{compact_rag_context}\n"
+    if contexto_rag:
+        rag_block = f"\n[CONTEXTO RAG]\n{contexto_rag}\n"
     return f"""Eres un asistente tecnico multilingue especializado en electrodomesticos.
 Responde solo en {target_language}. No cambies de idioma.
 Tu funcion es redactar un resumen conversacional breve para el usuario final a partir de datos YA validados.
@@ -1569,7 +1514,7 @@ def chat() -> tuple[Any, int] | Any:
         raw_response = call_ollama_generate(
             EXTRACTOR_MODEL,
             build_prompt(message, contexto_rag),
-            num_predict=360,
+            num_predict=480,
             timeout=EXTRACTOR_TIMEOUT,
         )
     except requests.RequestException as exc:
@@ -1643,19 +1588,14 @@ def chat() -> tuple[Any, int] | Any:
 
     assistant_text = ""
     assistant_model_error = ""
-    assistant_model_skipped, assistant_skip_reason = should_skip_assistant_model(
-        extractor_elapsed,
-        extracted,
-        rag_hits,
-        issues,
-    )
+    assistant_model_skipped, assistant_skip_reason = should_skip_assistant_model(extractor_elapsed)
     if not assistant_model_skipped:
         try:
             assistant_text = sanitize_assistant_text(
                 call_ollama_generate(
                     RESPONSE_MODEL,
-                    build_assistant_prompt(message, extracted, issues, rag_hits),
-                    num_predict=48,
+                    build_assistant_prompt(message, extracted, issues, contexto_rag),
+                    num_predict=96,
                     timeout=ASSISTANT_TIMEOUT,
                 ),
                 message,
